@@ -1,0 +1,3 @@
+[submodule "enginelib"]
+	path = enginelib
+	url = git@github.com:GrandEngineering/enginelib.git
