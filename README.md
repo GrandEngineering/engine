@@ -4,7 +4,7 @@ A blazingly fast distrubted computing project.
 ## License & Use
 [GE](https://github.com/GrandEngineering) reserve all rights and [GE](https://github.com/GrandEngineering) also reserves the rights to restrain individuals abilities to use this software and its code. The points below outline what you can, cannot and must do when dealing with the
 contents of this repository. Licenses for commercial use can only be granted by [GE](https://github.com/GrandEngineering)
-
+For better understading checkout [LICENSE](https://github.com/GrandEngineering/engine/blob/main/LICENSE.md)
 ### You CAN
 * Write your own code that uses this code as a dependency.
 * Submit Pull Requests to this repository.
