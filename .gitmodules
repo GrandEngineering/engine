@@ -1,3 +1,6 @@
 [submodule "enginelib"]
 	path = enginelib
 	url = git@github.com:GrandEngineering/enginelib.git
+[submodule "engineweb"]
+	path = engineweb
+	url = git@github.com:IGN-Styly/engineweb.git
