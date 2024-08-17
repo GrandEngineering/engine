@@ -5,6 +5,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
+import { posts } from "~/server/db/schema";
 
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
@@ -18,18 +19,15 @@ export const postRouter = createTRPCRouter({
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.post.create({
-        data: {
-          name: input.name,
-          createdBy: { connect: { id: ctx.session.user.id } },
-        },
+      await ctx.db.insert(posts).values({
+        name: input.name,
+        createdById: ctx.session.user.id,
       });
     }),
 
-  getLatest: protectedProcedure.query(async ({ ctx }) => {
-    const post = await ctx.db.post.findFirst({
-      orderBy: { createdAt: "desc" },
-      where: { createdBy: { id: ctx.session.user.id } },
+  getLatest: publicProcedure.query(async ({ ctx }) => {
+    const post = await ctx.db.query.posts.findFirst({
+      orderBy: (posts, { desc }) => [desc(posts.createdAt)],
     });
 
     return post ?? null;

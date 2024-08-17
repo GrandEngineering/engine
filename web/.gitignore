@@ -17,7 +17,7 @@ db.sqlite
 /.next/
 /out/
 next-env.d.ts
-
+.contentlayer
 # production
 /build
 
