@@ -1,24 +1,20 @@
-pub enum TaskRunner {
-    CPU,
-    ROCM,
-    CUDA,
-}
-pub struct Chunk {
-    pub start: u128,
-    pub end: u128,
-}
-
-pub struct Task<TaskInput, TaskOutput> {
-    pub task_runner: TaskRunner,
-    pub task_id: u128,
-    pub task_fn: Box<dyn Fn(TaskInput, &TaskRunner) -> TaskOutput>,
-}
-impl<TaskInput, TaskOutput> Task<TaskInput, TaskOutput> {
-    pub fn execute(&self, input: TaskInput) -> TaskOutput {
-        (self.task_fn)(input, &self.task_runner)
+pub trait Task {
+    fn run_hip(&mut self) {
+        println!("HIP Runtime not availible running with the CPU");
+        self.run_cpu();
+    }
+    fn run_cpu(&mut self) {
+        panic!("CPU run not Implemented");
+    }
+    fn run(&mut self, run: Option<Runner>) {
+        match run {
+            Some(Runner::HIP) => self.run_hip(),
+            Some(Runner::CPU) => self.run_cpu(),
+            None => self.run_cpu(),
+        }
     }
 }
-
-pub fn isprime(input: Chunk, runner: &TaskRunner) -> u128 {
-    input.end * (input.start + input.end)
+pub enum Runner {
+    HIP,
+    CPU,
 }
