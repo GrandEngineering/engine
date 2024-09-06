@@ -6,36 +6,14 @@ service engine {
 }
 service auth {
 }
-enum TaskRunner {
-    CPU=0;
-    ROCM=1;
-    CUDA=2;
-}
-//New tasks are registered here
-enum Tasks {
-    aksprime=0;
-    matixmult=1;
-}
-enum TaskSize {
-    SMALL=0;
-    MEDIUM=1;
-    LARGE=2;
-}
+
 message TaskRequest {
-    Tasks task=1;
-    TaskRunner runner =2;
-    TaskSize taskSize =3;
+    TaskType task_type = 1;
 }
-// Individual Task Data definitions
-message aksprimeData {
-    bytes start=1; //bytes so i can use u128
-    bytes end=2;
+enum TaskType {
+    TASK_FIB = 0;
 }
 message Task {
-    TaskRunner runner=1; //Desired runner will go back to cpu if no gpu implementations is there also used for better load distributuion
-    Tasks task=2;
-    string id =3;
-    oneof taskData {
-        aksprimeData aksprime=4;
-    }
+    bytes task_payload = 1;
+    TaskType task_type = 2;
 }

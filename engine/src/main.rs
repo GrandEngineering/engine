@@ -1,5 +1,7 @@
-use proto::engine_server::{Engine, EngineServer};
+use std::any::Any;
 
+use proto::engine_server::{Engine, EngineServer};
+use proto::TaskType;
 use tonic::transport::Server;
 mod proto {
     tonic::include_proto!("engine");
@@ -15,16 +17,11 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::TaskRequest>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
-        println!("Got a request {:?}", request);
         let input = request.get_ref();
+        println!("Got a request {:?}", input);
         let task = proto::Task {
-            id: "pog".to_string(),
-            runner: input.runner,
-            task: input.task,
-            task_data: Option::from(proto::task::TaskData::Aksprime(proto::AksprimeData {
-                start: Vec::new(),
-                end: Vec::new(),
-            })),
+            task_payload: Vec::new(),
+            task_type: TaskType::TaskFib as i32,
         };
         Ok(tonic::Response::new(task))
     }
@@ -35,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let engine = EngineService::default();
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
-        .build()
+        .build_v1alpha()
         .unwrap();
 
     Server::builder()
