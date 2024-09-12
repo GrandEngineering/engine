@@ -20,6 +20,7 @@ pub enum Runner {
     HIP,
     CPU,
 }
+#[derive(Debug, Clone, Copy)]
 pub struct FibTask {
     pub iter: u64,
     pub result: u64,
