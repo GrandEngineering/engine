@@ -1,7 +1,7 @@
+use enginelib::{FibTask, Task};
 use proto::engine_server::{Engine, EngineServer};
 use proto::TaskType;
 use tonic::transport::Server;
-
 mod proto {
     tonic::include_proto!("engine");
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
@@ -18,10 +18,15 @@ impl Engine for EngineService {
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let input = request.get_ref();
         println!("Got a request {:?}", input);
-        let task = proto::Task {
-            task_payload: Vec::new(),
-            task_type: TaskType::TaskFib.into(),
+        let payload = FibTask {
+            iter: 10,
+            result: 0,
         };
+        let task = proto::Task {
+            task_payload: payload.to_bytes(),
+            task_type: 0,
+        };
+        println!("{:?}", task);
         Ok(tonic::Response::new(task))
     }
 }
