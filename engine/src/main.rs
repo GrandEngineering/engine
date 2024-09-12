@@ -21,7 +21,7 @@ impl Engine for EngineService {
         println!("Got a request {:?}", input);
         let task = proto::Task {
             task_payload: Vec::new(),
-            task_type: TaskType::TaskFib as i32,
+            task_type: TaskType::TaskFib.into(),
         };
         Ok(tonic::Response::new(task))
     }
