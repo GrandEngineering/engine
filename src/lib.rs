@@ -20,3 +20,30 @@ pub enum Runner {
     HIP,
     CPU,
 }
+pub struct FibTask {
+    iter: u64,
+    result: u64,
+}
+impl Task for FibTask{
+    fn run_cpu(&mut self) {
+        let mut a = 0;
+        let mut b = 1;
+        for _ in 0..self.iter {
+            let tmp = a;
+            a = b;
+            b = tmp + b;
+        }
+        self.result = a;
+    }
+    fn from_bytes(bytes: &[u8]) -> Self {
+        let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
+        let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
+        Self { iter, result }
+    }
+    fn to_bytes(&self) -> &[u8] {
+        let mut bytes = Vec::with_capacity(16);
+        bytes.extend_from_slice(&self.iter.to_le_bytes());
+        bytes.extend_from_slice(&self.result.to_le_bytes());
+        bytes
+    }
+}
