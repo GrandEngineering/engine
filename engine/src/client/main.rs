@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let req = proto::TaskRequest {
         task_type: proto::TaskType::TaskFib.into(),
     };
-    let res = client.aquire_task(req).await?;'
+    let res = client.aquire_task(req).await?;
     println!("{:?}", res);
     Ok(())
 }
