@@ -21,8 +21,8 @@ pub enum Runner {
     CPU,
 }
 pub struct FibTask {
-    iter: u64,
-    result: u64,
+    pub iter: u64,
+    pub result: u64,
 }
 impl Task for FibTask {
     fn run_cpu(&mut self) {
