@@ -4,3 +4,6 @@
 [submodule "engineweb"]
 	path = engineweb
 	url = git@github.com:IGN-Styly/engineweb.git
+[submodule "auth"]
+    path = auth
+    url = git@github.com:IGN-Styly/authrelay.git
