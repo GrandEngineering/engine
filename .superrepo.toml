@@ -1,0 +1,27 @@
+[monorepo]
+name = "engine"
+display_name = "GE Engine"
+git = "git@github.com:GrandEngineering/engine.git"
+
+[[repo]]
+name = "engine web"
+display_name = "GE Engine Website"
+git = "git@github.com:IGN-Styly/engineweb.git"
+path = "engineweb"
+test = "npm run lint"
+
+[[repo]]
+name = "enginelib"
+display_name = "GE EngineLib"
+git = "git@github.com:GrandEngineering/enginelib.git"
+path = "enginelib"
+test = "cargo test"
+build = "cargo build"
+
+[[repo]]
+
+[[repo]]
+name = "engine"
+external = false
+path = "engine"
+test = "cargo test"
