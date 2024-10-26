@@ -1,4 +1,6 @@
-pub trait Task {
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
+
+pub trait Task: Debug {
     fn run_hip(&mut self) {
         println!("HIP Runtime not available, falling back to CPU");
         self.run_cpu();
@@ -12,7 +14,9 @@ pub trait Task {
             Some(Runner::CPU) | None => self.run_cpu(),
         }
     }
-    fn from_bytes(bytes: &[u8]) -> Self;
+    fn from_bytes(bytes: &[u8]) -> Self
+    where
+        Self: Sized;
     fn to_bytes(&self) -> Vec<u8>;
 }
 #[derive(Debug, Clone, Copy)]
@@ -20,31 +24,21 @@ pub enum Runner {
     HIP,
     CPU,
 }
-#[derive(Debug, Clone, Copy)]
-pub struct FibTask {
-    pub iter: u64,
-    pub result: u64,
+
+pub trait TaskRegistry {
+    fn register(&mut self, task: Arc<dyn Task>, mod_id: String, identifier: String);
+    fn get(&self, mod_id: String, identifier: String) -> Option<&dyn Task>;
 }
-impl Task for FibTask {
-    fn run_cpu(&mut self) {
-        let mut a = 0;
-        let mut b = 1;
-        for _ in 0..self.iter {
-            let tmp = a;
-            a = b;
-            b += tmp;
-        }
-        self.result = a;
+#[derive(Default, Clone)]
+pub struct EngineTaskRegistry {
+    pub tasks: HashMap<(String, String), Arc<dyn Task>>,
+}
+impl TaskRegistry for EngineTaskRegistry {
+    fn register(&mut self, task: Arc<dyn Task>, mod_id: String, identifier: String) {
+        // Insert the task into the hashmap with (mod_id, identifier) as the key
+        self.tasks.insert((mod_id, identifier), task);
     }
-    fn from_bytes(bytes: &[u8]) -> Self {
-        let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
-        let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
-        Self { iter, result }
-    }
-    fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(16);
-        bytes.extend_from_slice(&self.iter.to_le_bytes());
-        bytes.extend_from_slice(&self.result.to_le_bytes());
-        bytes
+    fn get(&self, mod_id: String, identifier: String) -> Option<&dyn Task> {
+        self.tasks.get(&(mod_id, identifier)).map(|t| &**t)
     }
 }
