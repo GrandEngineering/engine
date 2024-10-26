@@ -1,0 +1,13 @@
+[package]
+name = "engine_core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+# Indicate this is a library that can be compiled to WebAssembly
+crate-type = ["cdylib", "rlib"]
+[dependencies]
+enginelib = { path = "../enginelib" }
+[profile.release]
+# Optimize for Wasm binary size
+opt-level = "z"
