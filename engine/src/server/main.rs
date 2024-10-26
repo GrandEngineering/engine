@@ -1,7 +1,16 @@
-use enginelib::{FibTask, Task};
+use enginelib::{EngineTaskRegistry, Task};
 use proto::engine_server::{Engine, EngineServer};
 use proto::TaskType;
+use std::collections::HashMap;
+use std::sync::Arc;
 use tonic::transport::Server;
+
+#[cfg(unix)]
+use libloading::os::unix::*;
+
+#[cfg(windows)]
+use libloading::os::windows::*;
+
 mod proto {
     tonic::include_proto!("engine");
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
@@ -18,20 +27,30 @@ impl Engine for EngineService {
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let input = request.get_ref();
         println!("Got a request {:?}", input);
-        let payload = FibTask {
-            iter: 10,
-            result: 0,
+        let response = proto::Task {
+            ..Default::default()
         };
-        let task = proto::Task {
-            task_payload: payload.to_bytes(),
-            task_type: 0,
-        };
-        println!("{:?}", task);
-        Ok(tonic::Response::new(task))
+        Ok(tonic::Response::new(response))
     }
 }
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut registry = EngineTaskRegistry {
+        tasks: HashMap::new(),
+    };
+    unsafe {
+        let lib = Library::new("libengine_core.so").unwrap();
+        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineTaskRegistry)> =
+            lib.get(b"run").unwrap();
+        run(&mut registry);
+    }
+    println!(
+        "BIN:{:?}",
+        registry
+            .tasks
+            .get(&("namespace".to_string(), "fib".to_string()))
+    );
     let addr = "[::1]:50051".parse().unwrap();
     let engine = EngineService::default();
     let reflection_service = tonic_reflection::server::Builder::configure()

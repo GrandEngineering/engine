@@ -12,6 +12,7 @@ name = "server"
 path = "src/server/main.rs"
 [dependencies]
 enginelib = { path = "../enginelib" }
+libloading = "0.8.5"
 prost = "0.13.1"
 tokio = { features = ["rt-multi-thread"], version = "1.39.2" }
 tonic = "0.12.2"
