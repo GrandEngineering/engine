@@ -2,18 +2,16 @@ syntax="proto3";
 package engine;
 service engine {
     rpc AquireTask(TaskRequest) returns (Task);
+    rpc AquireTaskReg() returns (TaskRequest);
     //rpc PublishTask(CompletedTask) returns (TaskStatus);
 }
 service auth {
 }
 
 message TaskRequest {
-    TaskType task_type = 1;
-}
-enum TaskType {
-    TASK_FIB = 0;
+    bytes task_id = 1; //namespace:task
 }
 message Task {
     bytes task_payload = 1;
-    TaskType task_type = 2;
+    bytes task_id = 2; //namespace:task
 }

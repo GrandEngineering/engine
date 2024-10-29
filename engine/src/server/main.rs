@@ -1,6 +1,5 @@
 use enginelib::{EngineTaskRegistry, Task};
 use proto::engine_server::{Engine, EngineServer};
-use proto::TaskType;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tonic::transport::Server;
@@ -27,6 +26,11 @@ impl Engine for EngineService {
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let input = request.get_ref();
         println!("Got a request {:?}", input);
+        let mut task_id = String::from_utf8(input.task_id.clone()).unwrap();
+
+        let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
+        let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
+        println!("namespace:task {}:{}", &namespace, &task_name);
         let response = proto::Task {
             ..Default::default()
         };
