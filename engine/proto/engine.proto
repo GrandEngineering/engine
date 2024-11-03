@@ -1,17 +1,22 @@
-syntax="proto3";
+syntax = "proto3";
 package engine;
 service engine {
-    rpc AquireTask(TaskRequest) returns (Task);
-    rpc AquireTaskReg() returns (TaskRequest);
-    //rpc PublishTask(CompletedTask) returns (TaskStatus);
+  rpc AquireTask(TaskRequest) returns (Task);
+  rpc AquireTaskReg(empty) returns (TaskRegistry);
+  // rpc PublishTask(CompletedTask) returns (TaskStatus);
 }
-service auth {
+service auth {}
+
+message empty {}
+
+message TaskRegistry {
+  bytes tasks = 1; // namespace:task
 }
 
 message TaskRequest {
-    bytes task_id = 1; //namespace:task
+  bytes task_id = 1; // namespace:task
 }
 message Task {
-    bytes task_payload = 1;
-    bytes task_id = 2; //namespace:task
+  bytes task_payload = 1;
+  bytes task_id = 2; // namespace:task
 }

@@ -1,4 +1,5 @@
-use enginelib::{EngineTaskRegistry, Task};
+use enginelib::event::EngineAPI;
+use enginelib::{event, EngineTaskRegistry, Registry, Task};
 use proto::engine_server::{Engine, EngineServer};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -20,6 +21,13 @@ struct EngineService {}
 
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn aquire_task_reg(
+        &self,
+        request: tonic::Request<proto::Empty>,
+    ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
+        let response = proto::TaskRegistry { tasks: vec![] };
+        Ok(tonic::Response::new(response))
+    }
     async fn aquire_task(
         &self,
         request: tonic::Request<proto::TaskRequest>,
@@ -40,21 +48,28 @@ impl Engine for EngineService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut registry = EngineTaskRegistry {
-        tasks: HashMap::new(),
-    };
+    let mut API = event::EngineAPI::default();
+    let startEvent = ("core".to_string(), "onstartevent".to_string());
     unsafe {
-        let lib = Library::new("libengine_core.so").unwrap();
-        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineTaskRegistry)> =
-            lib.get(b"run").unwrap();
-        run(&mut registry);
+        let lib = Library::new("modules/libengine_core.so").unwrap();
+        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> = lib.get(b"run").unwrap();
+        run(&mut API);
     }
     println!(
         "BIN:{:?}",
-        registry
+        API.task_registry
             .tasks
             .get(&("namespace".to_string(), "fib".to_string()))
     );
+    API.event_bus.event_registry.register(
+        Arc::new(event::OnStartEvent {
+            cancelled: false,
+            modules: vec![],
+            id: startEvent.clone(),
+        }),
+        startEvent.clone(),
+    );
+    API.event_bus.handle_default(startEvent.clone());
     let addr = "[::1]:50051".parse().unwrap();
     let engine = EngineService::default();
     let reflection_service = tonic_reflection::server::Builder::configure()
