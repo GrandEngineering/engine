@@ -25,9 +25,11 @@ pub enum Runner {
     CPU,
 }
 
-pub trait TaskRegistry {
+pub trait TaskRegistry: Default + Clone {
     fn register(&mut self, task: Arc<dyn Task>, mod_id: String, identifier: String);
     fn get(&self, mod_id: String, identifier: String) -> Option<&dyn Task>;
+    fn serialize(&self) -> Vec<u8>;
+    fn deserialize(bytes: &[u8]) -> Vec<(String, String)>;
 }
 #[derive(Default, Clone)]
 pub struct EngineTaskRegistry {
@@ -40,5 +42,16 @@ impl TaskRegistry for EngineTaskRegistry {
     }
     fn get(&self, mod_id: String, identifier: String) -> Option<&dyn Task> {
         self.tasks.get(&(mod_id, identifier)).map(|t| &**t)
+    }
+    fn serialize(&self) -> Vec<u8> {
+        let keys = self
+            .tasks
+            .keys()
+            .cloned()
+            .collect::<Vec<(String, String)>>();
+        bincode::serialize(&keys).unwrap()
+    }
+    fn deserialize(bytes: &[u8]) -> Vec<(String, String)> {
+        bincode::deserialize(bytes).unwrap()
     }
 }

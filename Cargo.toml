@@ -10,3 +10,4 @@ name = "test"
 path = "src/test.rs"
 
 [dependencies]
+bincode = "1.3.3"
