@@ -1,5 +1,7 @@
-use enginelib::{EngineTaskRegistry, Task, TaskRegistry};
+use enginelib::event::{Event, EventCTX, EventHandler};
+use enginelib::{event, event::OnStartEvent, Registry, Task, VecRegistry};
 use std::sync::Arc;
+use std::{collections::HashMap, fmt::Debug, process};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FibTask {
     pub iter: u64,
@@ -29,13 +31,32 @@ impl Task for FibTask {
     }
 }
 #[no_mangle]
-pub fn run(reg: &mut EngineTaskRegistry) {
+pub fn run(api: &mut event::EngineAPI) {
     let mod_id = "namespace".to_string();
     let task_id = "fib".to_string();
-    reg.register(
+
+    api.task_registry.register(
         Arc::new(FibTask::default()),
-        mod_id.clone(),
-        task_id.clone(),
+        (mod_id.clone(), task_id.clone()),
+    );
+    api.event_bus.event_handler_registry.register_handler(
+        OnStartEventHandler,
+        ("core".to_string(), "onstartevent".to_string()),
     );
     println!("Registered task: {}:{}", &mod_id, &task_id);
+    //OnStartEventHandler.ha
+    //(namespace,event_id)
+}
+struct OnStartEventHandler;
+impl EventHandler for OnStartEventHandler {
+    fn handle(&self, event: &mut dyn Event) {
+        let event: &mut OnStartEvent =
+            <OnStartEventHandler as EventCTX<OnStartEvent>>::get_event::<OnStartEvent>(event);
+        self.handleCTX(event);
+    }
+}
+impl EventCTX<OnStartEvent> for OnStartEventHandler {
+    fn handleCTX(&self, event: &mut OnStartEvent) {
+        println!("here mom!");
+    }
 }

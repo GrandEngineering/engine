@@ -1,4 +1,4 @@
-use enginelib::event::EngineAPI;
+use enginelib::event::{EngineAPI, OnStartEvent};
 use enginelib::{event, EngineTaskRegistry, Registry, Task};
 use proto::engine_server::{Engine, EngineServer};
 use std::collections::HashMap;
@@ -62,6 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .get(&("namespace".to_string(), "fib".to_string()))
     );
     API.event_bus.event_registry.register(
+        //with any valid state
         Arc::new(event::OnStartEvent {
             cancelled: false,
             modules: vec![],
@@ -69,7 +70,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
         start_event.clone(),
     );
-    API.event_bus.handle_default(start_event.clone());
+    API.event_bus.handle(
+        start_event.clone(),
+        &mut OnStartEvent {
+            cancelled: false,
+            id: start_event.clone(),
+            modules: vec![],
+        },
+    );
     let addr = "[::1]:50051".parse().unwrap();
     let engine = EngineService::default();
     let reflection_service = tonic_reflection::server::Builder::configure()
