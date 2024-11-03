@@ -49,7 +49,7 @@ impl Engine for EngineService {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut API = event::EngineAPI::default();
-    let startEvent = ("core".to_string(), "onstartevent".to_string());
+    let start_event = ("core".to_string(), "onstartevent".to_string());
     unsafe {
         let lib = Library::new("modules/libengine_core.so").unwrap();
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> = lib.get(b"run").unwrap();
@@ -65,11 +65,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Arc::new(event::OnStartEvent {
             cancelled: false,
             modules: vec![],
-            id: startEvent.clone(),
+            id: start_event.clone(),
         }),
-        startEvent.clone(),
+        start_event.clone(),
     );
-    API.event_bus.handle_default(startEvent.clone());
+    API.event_bus.handle_default(start_event.clone());
     let addr = "[::1]:50051".parse().unwrap();
     let engine = EngineService::default();
     let reflection_service = tonic_reflection::server::Builder::configure()
