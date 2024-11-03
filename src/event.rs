@@ -1,7 +1,6 @@
 use crate::EngineTaskRegistry;
 use crate::Identifier;
 use crate::Registry;
-use crate::VecRegistry;
 use std::any::Any;
 use std::collections::HashMap;
 use std::process;
@@ -16,6 +15,7 @@ pub trait EventCTX<C: Event> {
     fn get_event<T: Event + Sized>(event: &mut dyn Event) -> &mut T {
         event.as_any_mut().downcast_mut::<T>().unwrap()
     }
+    #[allow(non_snake_case)]
     fn handleCTX(&self, event: &mut C);
 }
 
