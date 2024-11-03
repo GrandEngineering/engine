@@ -1,7 +1,6 @@
 use enginelib::event::{EngineAPI, OnStartEvent};
-use enginelib::{event, EngineTaskRegistry, Registry, Task};
+use enginelib::{event, Registry};
 use proto::engine_server::{Engine, EngineServer};
-use std::collections::HashMap;
 use std::sync::Arc;
 use tonic::transport::Server;
 
@@ -34,7 +33,7 @@ impl Engine for EngineService {
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let input = request.get_ref();
         println!("Got a request {:?}", input);
-        let mut task_id = String::from_utf8(input.task_id.clone()).unwrap();
+        let task_id = String::from_utf8(input.task_id.clone()).unwrap();
 
         let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
         let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
@@ -48,20 +47,20 @@ impl Engine for EngineService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut API = event::EngineAPI::default();
+    let mut api = event::EngineAPI::default();
     let start_event = ("core".to_string(), "onstartevent".to_string());
     unsafe {
         let lib = Library::new("modules/libengine_core.so").unwrap();
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> = lib.get(b"run").unwrap();
-        run(&mut API);
+        run(&mut api);
     }
     println!(
         "BIN:{:?}",
-        API.task_registry
+        api.task_registry
             .tasks
             .get(&("namespace".to_string(), "fib".to_string()))
     );
-    API.event_bus.event_registry.register(
+    api.event_bus.event_registry.register(
         //with any valid state
         Arc::new(event::OnStartEvent {
             cancelled: false,
@@ -70,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }),
         start_event.clone(),
     );
-    API.event_bus.handle(
+    api.event_bus.handle(
         start_event.clone(),
         &mut OnStartEvent {
             cancelled: false,
