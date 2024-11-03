@@ -1,7 +1,7 @@
 use enginelib::event::{Event, EventCTX, EventHandler};
-use enginelib::{event, event::OnStartEvent, Registry, Task, VecRegistry};
+use enginelib::{event, event::OnStartEvent, Registry, Task};
+use std::fmt::Debug;
 use std::sync::Arc;
-use std::{collections::HashMap, fmt::Debug, process};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct FibTask {
     pub iter: u64,
@@ -57,6 +57,8 @@ impl EventHandler for OnStartEventHandler {
 }
 impl EventCTX<OnStartEvent> for OnStartEventHandler {
     fn handleCTX(&self, event: &mut OnStartEvent) {
-        println!("here mom!");
+        for n in event.modules.clone() {
+            println!("Module: {}", n);
+        }
     }
 }
