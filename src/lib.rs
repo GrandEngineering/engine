@@ -1,4 +1,6 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
+pub mod event;
+pub type Identifier = (String, String);
 
 pub trait Task: Debug {
     fn run_hip(&mut self) {
@@ -24,34 +26,31 @@ pub enum Runner {
     HIP,
     CPU,
 }
-
+pub trait Registry<T: ?Sized>: Default + Clone {
+    fn register(&mut self, registree: Arc<T>, identifier: Identifier);
+    fn get(&self, identifier: &Identifier) -> Option<Arc<T>>;
+}
+pub trait VecRegistry<T: ?Sized>: Default + Clone {
+    fn register(&mut self, registree: Arc<T>, identifier: Identifier);
+    fn get(&self, identifier: &Identifier) -> Option<Vec<Arc<T>>>;
+}
 pub trait TaskRegistry: Default + Clone {
-    fn register(&mut self, task: Arc<dyn Task>, mod_id: String, identifier: String);
+    fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier);
     fn get(&self, mod_id: String, identifier: String) -> Option<&dyn Task>;
     fn serialize(&self) -> Vec<u8>;
-    fn deserialize(bytes: &[u8]) -> Vec<(String, String)>;
+    fn deserialize(bytes: &[u8]) -> Vec<Identifier>;
 }
 #[derive(Default, Clone)]
 pub struct EngineTaskRegistry {
-    pub tasks: HashMap<(String, String), Arc<dyn Task>>,
+    pub tasks: HashMap<Identifier, Arc<dyn Task>>,
 }
-impl TaskRegistry for EngineTaskRegistry {
-    fn register(&mut self, task: Arc<dyn Task>, mod_id: String, identifier: String) {
+impl Registry<dyn Task> for EngineTaskRegistry {
+    fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier) {
         // Insert the task into the hashmap with (mod_id, identifier) as the key
-        self.tasks.insert((mod_id, identifier), task);
+        self.tasks.insert(identifier, task);
     }
-    fn get(&self, mod_id: String, identifier: String) -> Option<&dyn Task> {
-        self.tasks.get(&(mod_id, identifier)).map(|t| &**t)
-    }
-    fn serialize(&self) -> Vec<u8> {
-        let keys = self
-            .tasks
-            .keys()
-            .cloned()
-            .collect::<Vec<(String, String)>>();
-        bincode::serialize(&keys).unwrap()
-    }
-    fn deserialize(bytes: &[u8]) -> Vec<(String, String)> {
-        bincode::deserialize(bytes).unwrap()
+
+    fn get(&self, identifier: &Identifier) -> Option<Arc<dyn Task>> {
+        self.tasks.get(identifier).cloned()
     }
 }
