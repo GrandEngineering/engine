@@ -1,5 +1,8 @@
 use enginelib::event::{Event, EventCTX, EventHandler};
+use enginelib::BuildEventHandler;
+//use enginelib::EventHandler;
 use enginelib::{event, event::OnStartEvent, Registry, Task};
+use std::any::Any;
 use std::fmt::Debug;
 use std::sync::Arc;
 #[derive(Debug, Clone, Copy, Default)]
@@ -47,18 +50,18 @@ pub fn run(api: &mut event::EngineAPI) {
     //OnStartEventHandler.ha
     //(namespace,event_id)
 }
-struct OnStartEventHandler;
-impl EventHandler for OnStartEventHandler {
-    fn handle(&self, event: &mut dyn Event) {
-        let event: &mut OnStartEvent =
-            <OnStartEventHandler as EventCTX<OnStartEvent>>::get_event::<OnStartEvent>(event);
-        self.handleCTX(event);
-    }
-}
-impl EventCTX<OnStartEvent> for OnStartEventHandler {
-    fn handleCTX(&self, event: &mut OnStartEvent) {
+//#[derive(EventHandler)]
+
+BuildEventHandler!(
+    OnStartEventHandler,
+    OnStartEvent,
+    |event: &mut OnStartEvent| {
         for n in event.modules.clone() {
             println!("Module: {}", n);
         }
+        println!(
+            "Event {:?} Handled by: {:?}",
+            event.id, "OnStartEventHandler"
+        );
     }
-}
+);
