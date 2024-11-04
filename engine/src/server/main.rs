@@ -1,11 +1,10 @@
 use enginelib::event::{EngineAPI, OnStartEvent};
 use enginelib::{event, Registry};
+#[cfg(unix)]
+use libloading::os::unix::*;
 use proto::engine_server::{Engine, EngineServer};
 use std::sync::Arc;
 use tonic::transport::Server;
-
-#[cfg(unix)]
-use libloading::os::unix::*;
 
 #[cfg(windows)]
 use libloading::os::windows::*;
@@ -50,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = event::EngineAPI::default();
     let start_event = ("core".to_string(), "onstartevent".to_string());
     unsafe {
-        let lib = Library::new("modules/libengine_core.so").unwrap();
+        let lib = Library::new("../engine_core/target/debug/libengine_core.so").unwrap();
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> = lib.get(b"run").unwrap();
         run(&mut api);
     }
