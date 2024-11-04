@@ -1,6 +1,7 @@
 use crate::EngineTaskRegistry;
 use crate::Identifier;
 use crate::Registry;
+//use engine_derive;
 use std::any::Any;
 use std::collections::HashMap;
 use std::process;
@@ -10,10 +11,31 @@ pub struct EngineAPI {
     pub task_registry: EngineTaskRegistry,
     pub event_bus: EventBus,
 }
+#[macro_export]
+macro_rules! BuildEventHandler {
+    ($handler:ident,$event:ty, $handler_fn:expr) => {
+        pub struct $handler;
+        impl EventHandler for $handler {
+            fn handle(&self, event: &mut dyn Event) {
+                let event: &mut $event = <Self as EventCTX<$event>>::get_event::<$event>(event);
+                self.handleCTX(event);
+            }
+        }
+        impl EventCTX<$event> for $handler {
+            fn handleCTX(&self, event: &mut $event) {
+                $handler_fn(event)
+            }
+        }
+    };
+}
 
-pub trait EventCTX<C: Event> {
+pub trait EventCTX<C: Event>: EventHandler {
     fn get_event<T: Event + Sized>(event: &mut dyn Event) -> &mut T {
         event.as_any_mut().downcast_mut::<T>().unwrap()
+    }
+    fn handle(&self, event: &mut dyn Event) {
+        let event: &mut C = <Self as EventCTX<C>>::get_event::<C>(event);
+        self.handleCTX(event);
     }
     #[allow(non_snake_case)]
     fn handleCTX(&self, event: &mut C);
