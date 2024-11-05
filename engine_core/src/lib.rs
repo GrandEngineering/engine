@@ -1,5 +1,5 @@
 use enginelib::event::{Event, EventCTX, EventHandler};
-use enginelib::BuildEventHandler;
+use enginelib::{BuildEventHandler, Identifier};
 //use enginelib::EventHandler;
 use enginelib::{event, event::OnStartEvent, Registry, Task};
 use std::any::Any;
@@ -37,7 +37,21 @@ impl Task for FibTask {
 pub fn run(api: &mut event::EngineAPI) {
     let mod_id = "namespace".to_string();
     let task_id = "fib".to_string();
-
+    let mod_data = modData { mod_id };
+    BuildEventHandler!(
+        OnStartEventHandler,
+        OnStartEvent,
+       ,
+        |event: &mut OnStartEvent| {
+            for n in event.modules.clone() {
+                println!("Module: {}", n);
+            }
+            println!(
+                "Event {:?} Handled by: {:?}",
+                event.id, "OnStartEventHandler"
+            );
+        }
+    );
     api.task_registry.register(
         Arc::new(FibTask::default()),
         (mod_id.clone(), task_id.clone()),
@@ -47,21 +61,8 @@ pub fn run(api: &mut event::EngineAPI) {
         ("core".to_string(), "onstartevent".to_string()),
     );
     println!("Registered task: {}:{}", &mod_id, &task_id);
-    //OnStartEventHandler.ha
-    //(namespace,event_id)
 }
 //#[derive(EventHandler)]
-
-BuildEventHandler!(
-    OnStartEventHandler,
-    OnStartEvent,
-    |event: &mut OnStartEvent| {
-        for n in event.modules.clone() {
-            println!("Module: {}", n);
-        }
-        println!(
-            "Event {:?} Handled by: {:?}",
-            event.id, "OnStartEventHandler"
-        );
-    }
-);
+struct modData {
+    pub mod_id: String,
+}
