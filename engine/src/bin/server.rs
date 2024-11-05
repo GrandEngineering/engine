@@ -14,7 +14,7 @@ mod proto {
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
         tonic::include_file_descriptor_set!("engine_descriptor");
 }
-
+#[allow(non_snake_case)]
 #[derive(Default)]
 struct EngineService {
     #[allow(non_snake_case)]
