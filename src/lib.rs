@@ -1,10 +1,21 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 pub mod event;
 pub type Identifier = (String, String);
+#[derive(Debug, Clone, Default)]
 pub struct ModCTX {
     pub mod_id: String,
     pub mod_author: String,
+    //pub rustc_version: String,
+    pub mod_name: String,
+    pub mod_version: String,
+    pub mod_description: String,
+    pub mod_license: String,
+    pub mod_credits: String,
+    pub mod_dependencies: Vec<String>,
+    pub mod_display_url: String,
+    pub mod_issue_tracker: String,
 }
+
 //pub use engine_derive;
 pub trait Task: Debug + Sync + Send {
     fn run_hip(&mut self) {
