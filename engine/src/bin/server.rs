@@ -21,7 +21,7 @@ struct engine_service {
 }
 
 #[tonic::async_trait]
-impl Engine for EngineService {
+impl Engine for engine_service {
     async fn aquire_task_reg(
         &self,
         request: tonic::Request<proto::Empty>,
