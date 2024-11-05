@@ -17,6 +17,7 @@ mod proto {
 
 #[derive(Default)]
 struct engine_service {
+    #[allow(non_snake_case)]
     EngineAPI: EngineAPI,
 }
 
