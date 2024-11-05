@@ -1,5 +1,6 @@
+use bincode::{deserialize, serialize};
 use enginelib::event::{EngineAPI, OnStartEvent};
-use enginelib::{event, Registry};
+use enginelib::{event, Identifier, Registry};
 #[cfg(unix)]
 use libloading::os::unix::*;
 use proto::engine_server::{Engine, EngineServer};
@@ -17,7 +18,7 @@ mod proto {
 #[allow(non_snake_case)]
 #[derive(Default)]
 struct EngineService {
-    EngineAPI: EngineAPI,
+    pub EngineAPI: EngineAPI,
 }
 
 #[tonic::async_trait]
@@ -26,7 +27,13 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
-        let response = proto::TaskRegistry { tasks: vec![] };
+        let mut tasks: Vec<Identifier> = Vec::new();
+        for (k, v) in &self.EngineAPI.task_registry.tasks {
+            tasks.push(k.clone());
+        }
+        let response = proto::TaskRegistry {
+            tasks: serialize(&tasks).unwrap(),
+        };
         Ok(tonic::Response::new(response))
     }
     async fn aquire_task(
@@ -80,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     );
     let addr = "[::1]:50051".parse().unwrap();
-    let engine = EngineService::default();
+    let engine = EngineService { EngineAPI: api };
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
         .build_v1alpha()
