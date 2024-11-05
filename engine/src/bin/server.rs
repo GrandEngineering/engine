@@ -15,7 +15,7 @@ mod proto {
         tonic::include_file_descriptor_set!("engine_descriptor");
 }
 #[derive(Default)]
-struct EngineService {
+struct engine_api {
     EngineAPI: EngineAPI,
 }
 
