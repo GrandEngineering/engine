@@ -1,8 +1,12 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 pub mod event;
 pub type Identifier = (String, String);
+pub struct ModCTX {
+    pub mod_id: String,
+    pub mod_author: String,
+}
 //pub use engine_derive;
-pub trait Task: Debug {
+pub trait Task: Debug + Sync + Send {
     fn run_hip(&mut self) {
         println!("HIP Runtime not available, falling back to CPU");
         self.run_cpu();
@@ -40,7 +44,7 @@ pub trait TaskRegistry: Default + Clone {
     fn serialize(&self) -> Vec<u8>;
     fn deserialize(bytes: &[u8]) -> Vec<Identifier>;
 }
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct EngineTaskRegistry {
     pub tasks: HashMap<Identifier, Arc<dyn Task>>,
 }
