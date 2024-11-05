@@ -16,13 +16,13 @@ mod proto {
 }
 
 #[derive(Default)]
-struct engine_service {
+struct EngineService {
     #[allow(non_snake_case)]
     EngineAPI: EngineAPI,
 }
 
 #[tonic::async_trait]
-impl Engine for engine_service {
+impl Engine for EngineService {
     async fn aquire_task_reg(
         &self,
         request: tonic::Request<proto::Empty>,
@@ -81,7 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     );
     let addr = "[::1]:50051".parse().unwrap();
-    let engine = engine_service::default();
+    let engine = EngineService::default();
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
         .build_v1alpha()
