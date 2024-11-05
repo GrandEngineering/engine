@@ -48,14 +48,11 @@ pub fn run(api: &mut event::EngineAPI) {
         OnStartEventHandler,
         OnStartEvent,
         mod_ctx,
-        |event: &mut OnStartEvent| {
+        |event: &mut OnStartEvent, mod_ctx: ModCTX| {
             for n in event.modules.clone() {
                 println!("Module: {}", n);
             }
-            println!(
-                "Event {:?} Handled by: {:?}",
-                event.id, "OnStartEventHandler"
-            );
+            println!("Event {:?} Handled by: {:?}", event.id, mod_ctx.mod_name);
         }
     );
     api.task_registry.register(
