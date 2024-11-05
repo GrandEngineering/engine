@@ -44,8 +44,8 @@ macro_rules! BuildEventHandler {
         }
         impl EventCTX<$event> for $handler {
             fn handleCTX(&self, event: &mut $event) {
-                let mod_data: &ModCTX = &self.mod_ctx;
-                $handler_fn(event)
+                let mod_ctx: &ModCTX = &self.mod_ctx;
+                $handler_fn(event, mod_ctx.clone())
             }
         }
     };
