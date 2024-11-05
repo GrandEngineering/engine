@@ -14,8 +14,10 @@ mod proto {
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
         tonic::include_file_descriptor_set!("engine_descriptor");
 }
-#[derive(Debug, Default)]
-struct EngineService {}
+#[derive(Default)]
+struct EngineService {
+    EngineAPI: EngineAPI,
+}
 
 #[tonic::async_trait]
 impl Engine for EngineService {
