@@ -27,8 +27,15 @@ macro_rules! BuildEventHandler {
             }
         }
     };
-    ($handler:ident,$event:ty,$mod_data:expr, $handler_fn:expr) => {
-        pub struct $handler;
+    ($handler:ident,$event:ty,$mod_ctx:expr, $handler_fn:expr) => {
+        pub struct $handler {
+            mod_ctx: ModCTX,
+        };
+        impl $handler {
+            pub fn new(mod_ctx: ModCTX) -> Self {
+                Self { mod_ctx }
+            }
+        }
         impl EventHandler for $handler {
             fn handle(&self, event: &mut dyn Event) {
                 let event: &mut $event = <Self as EventCTX<$event>>::get_event::<$event>(event);
@@ -37,7 +44,7 @@ macro_rules! BuildEventHandler {
         }
         impl EventCTX<$event> for $handler {
             fn handleCTX(&self, event: &mut $event) {
-                let mod_data = $mod_data;
+                let mod_data: &ModCTX = &self.mod_ctx;
                 $handler_fn(event)
             }
         }
