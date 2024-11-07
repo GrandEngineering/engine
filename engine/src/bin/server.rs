@@ -16,9 +16,9 @@ mod proto {
         tonic::include_file_descriptor_set!("engine_descriptor");
 }
 #[allow(non_snake_case)]
-#[derive(Default)]
 struct EngineService {
     pub EngineAPI: EngineAPI,
+    pub db: sled::Db,
 }
 
 #[tonic::async_trait]
@@ -56,6 +56,7 @@ impl Engine for EngineService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let db: sled::Db = sled::open("engine_db")?;
     let mut api = event::EngineAPI::default();
     let start_event = ("core".to_string(), "onstartevent".to_string());
     unsafe {
@@ -87,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     );
     let addr = "[::1]:50051".parse().unwrap();
-    let engine = EngineService { EngineAPI: api };
+    let engine = EngineService { EngineAPI: api, db };
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
         .build_v1alpha()

@@ -12,3 +12,4 @@ enginelib/Cargo.lock
 target
 Cargo.lock
 */Cargo.lock
+engine_db
