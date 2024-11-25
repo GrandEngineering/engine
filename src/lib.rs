@@ -1,5 +1,7 @@
-use std::{collections::HashMap, fmt::Debug, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, ops::DerefMut, sync::Arc};
 pub mod event;
+#[macro_use]
+extern crate log;
 
 pub type Identifier = (String, String);
 #[derive(Debug, Clone, Default)]
@@ -24,7 +26,7 @@ pub trait Task: Debug + Sync + Send {
         self.run_cpu();
     }
     fn run_cpu(&mut self) {
-        panic!("CPU run not Implemented");
+        error!("CPU run not Implemented")
     }
     fn run(&mut self, run: Option<Runner>) {
         match run {
@@ -32,7 +34,7 @@ pub trait Task: Debug + Sync + Send {
             Some(Runner::CPU) | None => self.run_cpu(),
         }
     }
-    fn from_bytes(bytes: &[u8]) -> Self
+    fn from_bytes(&self, bytes: &[u8]) -> Self
     where
         Self: Sized;
     fn to_bytes(&self) -> Vec<u8>;
