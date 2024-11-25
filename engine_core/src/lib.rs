@@ -21,7 +21,7 @@ impl Task for FibTask {
         }
         self.result = a;
     }
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(&self, bytes: &[u8]) -> Self {
         let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
         let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
         Self { iter, result }
