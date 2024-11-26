@@ -1,7 +1,6 @@
 use crate::EngineTaskRegistry;
 use crate::Identifier;
 use crate::Registry;
-//use engine_derive;
 use std::any::Any;
 use std::collections::HashMap;
 use std::process;
@@ -69,6 +68,7 @@ pub struct EventBus {
 }
 
 pub trait Event: Any + Send + Sync {
+    fn clone_box(&self) -> Box<dyn Event>;
     fn cancel(&mut self);
     fn is_cancelled(&self) -> bool;
     fn get_id(&self) -> Identifier;
@@ -103,18 +103,22 @@ impl EngineEventHandlerRegistry {
         println!("Handler registered for event ID: {:?}", identifier.clone());
     }
 }
-
+impl Clone for Box<dyn Event> {
+    fn clone(&self) -> Box<dyn Event> {
+        self.clone_box()
+    }
+}
 impl Registry<dyn Event> for EngineEventRegistry {
     fn register(&mut self, registree: Arc<dyn Event>, identifier: Identifier) {
         self.events.insert(identifier.clone(), registree);
         println!("Event registered with ID: {:?}", identifier.clone());
     }
 
-    fn get(&self, identifier: &Identifier) -> Option<Arc<dyn Event>> {
-        self.events.get(identifier).cloned()
+    fn get(&self, identifier: &Identifier) -> Option<Box<dyn Event>> {
+        self.events.get(identifier).map(|obj| obj.clone_box())
     }
 }
-
+#[derive(Clone)]
 pub struct OnStartEvent {
     pub modules: Vec<String>,
     pub cancelled: bool,
@@ -122,6 +126,10 @@ pub struct OnStartEvent {
 }
 
 impl Event for OnStartEvent {
+    fn clone_box(&self) -> Box<dyn Event> {
+        Box::new(self.clone())
+    }
+
     fn cancel(&mut self) {
         self.cancelled = true;
         process::exit(0)

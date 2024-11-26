@@ -1,5 +1,6 @@
-use std::{collections::HashMap, fmt::Debug, ops::DerefMut, sync::Arc};
+use std::{collections::HashMap, fmt::Debug, sync::Arc};
 pub mod event;
+extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
@@ -18,15 +19,21 @@ pub struct ModCTX {
     pub mod_display_url: String,
     pub mod_issue_tracker: String,
 }
-
+impl Clone for Box<dyn Task> {
+    fn clone(&self) -> Box<dyn Task> {
+        self.clone_box()
+    }
+}
 //pub use engine_derive;
 pub trait Task: Debug + Sync + Send {
+    fn clone_box(&self) -> Box<dyn Task>;
     fn run_hip(&mut self) {
         println!("HIP Runtime not available, falling back to CPU");
         self.run_cpu();
     }
     fn run_cpu(&mut self) {
-        error!("CPU run not Implemented")
+        println!("hi!");
+        panic!("CPU run not Implemented");
     }
     fn run(&mut self, run: Option<Runner>) {
         match run {
@@ -34,7 +41,7 @@ pub trait Task: Debug + Sync + Send {
             Some(Runner::CPU) | None => self.run_cpu(),
         }
     }
-    fn from_bytes(&self, bytes: &[u8]) -> Self
+    fn from_bytes(bytes: &[u8]) -> Self
     where
         Self: Sized;
     fn to_bytes(&self) -> Vec<u8>;
@@ -46,7 +53,7 @@ pub enum Runner {
 }
 pub trait Registry<T: ?Sized>: Default + Clone {
     fn register(&mut self, registree: Arc<T>, identifier: Identifier);
-    fn get(&self, identifier: &Identifier) -> Option<Arc<T>>;
+    fn get(&self, identifier: &Identifier) -> Option<Box<T>>;
 }
 pub trait VecRegistry<T: ?Sized>: Default + Clone {
     fn register<H>(&mut self, registree: H, identifier: Identifier);
@@ -68,7 +75,7 @@ impl Registry<dyn Task> for EngineTaskRegistry {
         self.tasks.insert(identifier, task);
     }
 
-    fn get(&self, identifier: &Identifier) -> Option<Arc<dyn Task>> {
-        self.tasks.get(identifier).cloned()
+    fn get(&self, identifier: &Identifier) -> Option<Box<dyn Task>> {
+        self.tasks.get(identifier).map(|obj| obj.clone_box())
     }
 }
