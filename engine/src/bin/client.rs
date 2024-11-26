@@ -4,6 +4,7 @@ use enginelib::{event, Registry, Task};
 use libloading::Library;
 use libloading::Symbol;
 use prost::Message;
+use std::alloc::System;
 use std::borrow::BorrowMut;
 use std::error::Error;
 use std::{
@@ -41,9 +42,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .get(&("namespace".to_string(), "fib".to_string()))
         .unwrap();
     tsk.run_cpu();
-    // rustc: cannot borrow data in an `Arc` as mutable
-    // trait `DerefMut` is required to modify through a dereference, but it is not implemented for `std::sync::Arc<dyn enginelib::Task>`
-    // let tsk_c = tsk.run_cpu();
+    println!("Mystery: {:?}", &tsk);
 
     Ok(())
 }
