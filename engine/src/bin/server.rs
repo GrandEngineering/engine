@@ -4,7 +4,7 @@ use enginelib::{event, Identifier, Registry};
 #[cfg(unix)]
 use libloading::os::unix::*;
 use proto::engine_server::{Engine, EngineServer};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use tonic::transport::Server;
 
 #[cfg(windows)]

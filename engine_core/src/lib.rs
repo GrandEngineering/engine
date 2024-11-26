@@ -4,13 +4,16 @@ use enginelib::{BuildEventHandler, Identifier, ModCTX};
 use enginelib::{event, event::OnStartEvent, Registry, Task};
 use std::any::Any;
 use std::fmt::Debug;
-use std::sync::Arc;
-#[derive(Debug, Clone, Copy, Default)]
+use std::sync::{Arc, RwLock};
+#[derive(Debug, Clone, Default)]
 pub struct FibTask {
     pub iter: u64,
     pub result: u64,
 }
 impl Task for FibTask {
+    fn clone_box(&self) -> Box<dyn Task> {
+        Box::new(self.clone())
+    }
     fn run_cpu(&mut self) {
         let mut a = 0;
         let mut b = 1;
@@ -21,7 +24,7 @@ impl Task for FibTask {
         }
         self.result = a;
     }
-    fn from_bytes(&self, bytes: &[u8]) -> Self {
+    fn from_bytes(bytes: &[u8]) -> Self {
         let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
         let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
         Self { iter, result }

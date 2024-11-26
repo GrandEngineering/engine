@@ -1,10 +1,17 @@
+use enginelib::Runner;
 //use enginelib::EventHandler;
 use enginelib::{event, Registry, Task};
 use libloading::Library;
 use libloading::Symbol;
 use prost::Message;
+use std::borrow::BorrowMut;
 use std::error::Error;
-use std::{collections::HashMap, fmt::Debug, ops::DerefMut, sync::Arc};
+use std::{
+    collections::HashMap,
+    fmt::Debug,
+    ops::DerefMut,
+    sync::{Arc, RwLock},
+};
 
 pub mod proto {
     tonic::include_proto!("engine");
@@ -29,10 +36,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let request = tonic::Request::new(req);
     // let res = client.aquire_task(request).await?;
     // let data = res.get_ref();
-    let tsk: Arc<dyn Task> = api
+    let mut tsk: Box<dyn Task> = api
         .task_registry
         .get(&("namespace".to_string(), "fib".to_string()))
         .unwrap();
+    tsk.run_cpu();
+    // rustc: cannot borrow data in an `Arc` as mutable
+    // trait `DerefMut` is required to modify through a dereference, but it is not implemented for `std::sync::Arc<dyn enginelib::Task>`
+    // let tsk_c = tsk.run_cpu();
 
     Ok(())
 }
