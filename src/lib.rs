@@ -32,7 +32,7 @@ pub trait Task: Debug + Sync + Send {
         self.run_cpu();
     }
     fn run_cpu(&mut self) {
-        println!("hi!");
+        error!("CPU run not Implemented");
         panic!("CPU run not Implemented");
     }
     fn run(&mut self, run: Option<Runner>) {

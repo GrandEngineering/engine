@@ -10,6 +10,8 @@ pub struct EngineAPI {
     pub task_registry: EngineTaskRegistry,
     pub event_bus: EventBus,
 }
+// The Actual Fuck
+// this fucking piece of god given code saves so much time
 #[macro_export]
 macro_rules! BuildEventHandler {
     ($handler:ident,$event:ty, $handler_fn:expr) => {
