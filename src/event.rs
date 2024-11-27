@@ -5,7 +5,6 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::process;
 use std::sync::Arc;
-
 pub struct EngineAPI {
     pub task_registry: EngineTaskRegistry,
     pub event_bus: EventBus,
@@ -153,6 +152,21 @@ impl Event for OnStartEvent {
 
 impl Default for EngineAPI {
     fn default() -> Self {
+        //Init Logger Here
+        fern::Dispatch::new()
+            .format(|out, message, record| {
+                out.finish(format_args!(
+                    "[{} {} {}] {}",
+                    humantime::format_rfc3339(std::time::SystemTime::now()),
+                    record.level(),
+                    record.target(),
+                    message
+                ))
+            })
+            .level(log::LevelFilter::Info)
+            .chain(std::io::stdout())
+            .apply()
+            .unwrap();
         Self {
             task_registry: EngineTaskRegistry::default(),
             event_bus: EventBus {

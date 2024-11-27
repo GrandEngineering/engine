@@ -1,9 +1,6 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
 pub mod event;
-extern crate pretty_env_logger;
-#[macro_use]
-extern crate log;
-
+use log::{debug, error, info, trace, warn};
 pub type Identifier = (String, String);
 #[derive(Debug, Clone, Default)]
 pub struct ModCTX {
@@ -33,7 +30,8 @@ pub trait Task: Debug + Sync + Send {
     }
     fn run_cpu(&mut self) {
         error!("CPU run not Implemented");
-        panic!("CPU run not Implemented");
+        println!("Hi Mom!")
+        //panic!("CPU run not Implemented");
     }
     fn run(&mut self, run: Option<Runner>) {
         match run {
