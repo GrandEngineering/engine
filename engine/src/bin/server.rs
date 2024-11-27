@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         //with any valid state
         Arc::new(event::OnStartEvent {
             cancelled: false,
-            modules: vec![],
+            modules: api.modules.values().cloned().collect(),
             id: start_event.clone(),
         }),
         start_event.clone(),
@@ -84,7 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &mut OnStartEvent {
             cancelled: false,
             id: start_event.clone(),
-            modules: vec![],
+            modules: api.modules.values().cloned().collect(),
         },
     );
     let addr = "[::1]:50051".parse().unwrap();
