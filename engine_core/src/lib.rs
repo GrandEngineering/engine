@@ -14,16 +14,16 @@ impl Task for FibTask {
     fn clone_box(&self) -> Box<dyn Task> {
         Box::new(self.clone())
     }
-    fn run_cpu(&mut self) {
-        let mut a = 0;
-        let mut b = 1;
-        for _ in 0..self.iter {
-            let tmp = a;
-            a = b;
-            b += tmp;
-        }
-        self.result = a;
-    }
+    // fn run_cpu(&mut self) {
+    //     let mut a = 0;
+    //     let mut b = 1;
+    //     for _ in 0..self.iter {
+    //         let tmp = a;
+    //         a = b;
+    //         b += tmp;
+    //     }
+    //     self.result = a;
+    // }
     fn from_bytes(bytes: &[u8]) -> Self {
         let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
         let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
