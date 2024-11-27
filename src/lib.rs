@@ -1,6 +1,10 @@
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
+
+use tracing::event as tevent;
+use tracing::instrument;
+use tracing::Level;
 pub mod event;
-use log::{debug, error, info, trace, warn};
+
 pub type Identifier = (String, String);
 #[derive(Debug, Clone, Default)]
 pub struct ModCTX {
@@ -22,17 +26,21 @@ impl Clone for Box<dyn Task> {
     }
 }
 //pub use engine_derive;
+
 pub trait Task: Debug + Sync + Send {
     fn clone_box(&self) -> Box<dyn Task>;
+    #[instrument]
     fn run_hip(&mut self) {
         println!("HIP Runtime not available, falling back to CPU");
         self.run_cpu();
     }
+    #[instrument]
     fn run_cpu(&mut self) {
-        error!("CPU run not Implemented");
+        tevent!(Level::ERROR, "CPU run not Implemented");
         println!("Hi Mom!")
         //panic!("CPU run not Implemented");
     }
+    #[instrument]
     fn run(&mut self, run: Option<Runner>) {
         match run {
             Some(Runner::HIP) => self.run_hip(),
