@@ -1,10 +1,11 @@
-use enginelib::event::{Event, EventCTX, EventHandler};
+use enginelib::event::{info, EngineAPI, Event, EventCTX, EventHandler};
 use enginelib::{BuildEventHandler, Identifier, ModCTX};
 //use enginelib::EventHandler;
 use enginelib::{event, event::OnStartEvent, Registry, Task};
 use std::any::Any;
 use std::fmt::Debug;
 use std::sync::{Arc, RwLock};
+
 #[derive(Debug, Clone, Default)]
 pub struct FibTask {
     pub iter: u64,
@@ -14,16 +15,16 @@ impl Task for FibTask {
     fn clone_box(&self) -> Box<dyn Task> {
         Box::new(self.clone())
     }
-    // fn run_cpu(&mut self) {
-    //     let mut a = 0;
-    //     let mut b = 1;
-    //     for _ in 0..self.iter {
-    //         let tmp = a;
-    //         a = b;
-    //         b += tmp;
-    //     }
-    //     self.result = a;
-    // }
+    fn run_cpu(&mut self) {
+        let mut a = 0;
+        let mut b = 1;
+        for _ in 0..self.iter {
+            let tmp = a;
+            a = b;
+            b += tmp;
+        }
+        self.result = a;
+    }
     fn from_bytes(bytes: &[u8]) -> Self {
         let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
         let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
@@ -38,24 +39,30 @@ impl Task for FibTask {
 }
 #[no_mangle]
 pub fn run(api: &mut event::EngineAPI) {
+    EngineAPI::setup_logger();
     let mod_id = "namespace".to_string();
     let task_id = "fib".to_string();
-    let mod_ctx = ModCTX {
+
+    let mod_ctx = api.register_module(ModCTX {
         mod_id: mod_id.clone(),
         mod_author: "@ign-styly".to_string(),
         mod_name: "Example Mod".to_string(),
         mod_version: "0.0.1".to_string(),
         ..Default::default()
-    };
+    });
+
     BuildEventHandler!(
         OnStartEventHandler,
         OnStartEvent,
         mod_ctx,
         |event: &mut OnStartEvent, mod_ctx: ModCTX| {
             for n in event.modules.clone() {
-                println!("Module: {}", n);
+                info!("Module: {:?}", n);
             }
-            println!("Event {:?} Handled by: {:?}", event.id, mod_ctx.mod_name);
+            info!(
+                "Event {:?} Handled by: {:?}, made by {}",
+                event.id, &mod_ctx.mod_name, &mod_ctx.mod_author
+            );
         }
     );
     api.task_registry.register(
@@ -63,9 +70,7 @@ pub fn run(api: &mut event::EngineAPI) {
         (mod_id.clone(), task_id.clone()),
     );
     api.event_bus.event_handler_registry.register_handler(
-        OnStartEventHandler {
-            mod_ctx: mod_ctx.clone(),
-        },
+        OnStartEventHandler { mod_ctx },
         ("core".to_string(), "onstartevent".to_string()),
     );
     println!("Registered task: {}:{}", &mod_id, &task_id);
