@@ -1,9 +1,9 @@
-use bincode::{deserialize, serialize};
-use enginelib::{api::EngineAPI, event, events, Identifier, Registry};
+use bincode::serialize;
+use enginelib::{api::EngineAPI, events, Identifier, Registry};
 #[cfg(unix)]
 use libloading::os::unix::*;
 use proto::engine_server::{Engine, EngineServer};
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use tonic::transport::Server;
 
 #[cfg(windows)]

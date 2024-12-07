@@ -1,19 +1,11 @@
 use enginelib::api::EngineAPI;
 use enginelib::task::Task;
 //use enginelib::EventHandler;
-use enginelib::{event, Registry};
+use enginelib::Registry;
 use libloading::Library;
 use libloading::Symbol;
 use prost::Message;
-use std::alloc::System;
-use std::borrow::BorrowMut;
 use std::error::Error;
-use std::{
-    collections::HashMap,
-    fmt::Debug,
-    ops::DerefMut,
-    sync::{Arc, RwLock},
-};
 
 pub mod proto {
     tonic::include_proto!("engine");
