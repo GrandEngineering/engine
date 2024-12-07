@@ -1,4 +1,3 @@
-use crate::EngineTaskRegistry;
 use crate::Identifier;
 use crate::ModCTX;
 use crate::Registry;
@@ -7,11 +6,7 @@ use std::collections::HashMap;
 use std::process;
 use std::sync::Arc;
 use tracing::{span, Level};
-pub struct EngineAPI {
-    pub task_registry: EngineTaskRegistry,
-    pub event_bus: EventBus,
-    pub modules: HashMap<String, Arc<ModCTX>>,
-}
+
 pub use tracing::{debug, error, event, info, warn};
 // The Actual Fuck
 // this fucking piece of god given code saves so much time
@@ -154,45 +149,6 @@ impl Event for OnStartEvent {
     }
 }
 
-impl Default for EngineAPI {
-    fn default() -> Self {
-        //Init Logger Here
-        tracing_subscriber::FmtSubscriber::builder()
-            // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
-            // will be written to stdout.
-            .with_max_level(Level::INFO)
-            // builds the subscriber.
-            .init();
-
-        Self {
-            task_registry: EngineTaskRegistry::default(),
-            event_bus: EventBus {
-                event_registry: EngineEventRegistry {
-                    events: HashMap::new(),
-                },
-                event_handler_registry: EngineEventHandlerRegistry {
-                    event_handlers: HashMap::new(),
-                },
-            },
-            modules: HashMap::new(),
-        }
-    }
-}
-impl EngineAPI {
-    pub fn register_module(&mut self, ctx: ModCTX) -> ModCTX {
-        self.modules
-            .insert(ctx.clone().mod_id, Arc::new(ctx.clone()));
-        ctx
-    }
-    pub fn setup_logger() {
-        tracing_subscriber::FmtSubscriber::builder()
-            // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
-            // will be written to stdout.
-            .with_max_level(Level::INFO)
-            // builds the subscriber.
-            .init();
-    }
-}
 impl EventBus {
     pub fn handle<T: Event + 'static>(&self, id: Identifier, event: &mut T) {
         #[cfg(debug_assertions)]
