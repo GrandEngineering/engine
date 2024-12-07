@@ -1,7 +1,6 @@
-use std::{collections::HashMap, fmt::Debug, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
 
 use crate::Identifier;
-use crate::Registry;
 use tracing::event as tevent;
 use tracing::instrument;
 use tracing::Level;
@@ -43,20 +42,7 @@ pub trait TaskRegistry: Default + Clone {
     fn serialize(&self) -> Vec<u8>;
     fn deserialize(bytes: &[u8]) -> Vec<Identifier>;
 }
-#[derive(Default, Clone, Debug)]
-pub struct EngineTaskRegistry {
-    pub tasks: HashMap<Identifier, Arc<dyn Task>>,
-}
-impl Registry<dyn Task> for EngineTaskRegistry {
-    fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier) {
-        // Insert the task into the hashmap with (mod_id, identifier) as the key
-        self.tasks.insert(identifier, task);
-    }
 
-    fn get(&self, identifier: &Identifier) -> Option<Box<dyn Task>> {
-        self.tasks.get(identifier).map(|obj| obj.clone_box())
-    }
-}
 impl Clone for Box<dyn Task> {
     fn clone(&self) -> Box<dyn Task> {
         self.clone_box()

@@ -1,11 +1,15 @@
+use std::{any::Any, process, sync::Arc};
+
+use crate::{event::Event, Identifier, ModCTX};
+
 #[derive(Clone)]
-pub struct OnStartEvent {
+pub struct StartEvent {
     pub modules: Vec<Arc<ModCTX>>,
     pub cancelled: bool,
     pub id: Identifier,
 }
 
-impl Event for OnStartEvent {
+impl Event for StartEvent {
     fn clone_box(&self) -> Box<dyn Event> {
         Box::new(self.clone())
     }

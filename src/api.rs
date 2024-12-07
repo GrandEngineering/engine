@@ -2,8 +2,8 @@ use tracing::Level;
 
 use crate::{
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},
-    task::EngineTaskRegistry,
-    ModCTX,
+    task::Task,
+    Identifier, ModCTX, Registry,
 };
 use std::{collections::HashMap, sync::Arc};
 
@@ -49,5 +49,19 @@ impl EngineAPI {
             .with_max_level(Level::INFO)
             // builds the subscriber.
             .init();
+    }
+}
+#[derive(Default, Clone, Debug)]
+pub struct EngineTaskRegistry {
+    pub tasks: HashMap<Identifier, Arc<dyn Task>>,
+}
+impl Registry<dyn Task> for EngineTaskRegistry {
+    fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier) {
+        // Insert the task into the hashmap with (mod_id, identifier) as the key
+        self.tasks.insert(identifier, task);
+    }
+
+    fn get(&self, identifier: &Identifier) -> Option<Box<dyn Task>> {
+        self.tasks.get(identifier).map(|obj| obj.clone_box())
     }
 }

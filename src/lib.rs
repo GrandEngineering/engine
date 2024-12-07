@@ -1,7 +1,8 @@
 use std::{fmt::Debug, sync::Arc};
 pub mod api;
 pub mod event;
-
+pub mod events;
+pub mod macros;
 pub mod prelude;
 pub mod task;
 pub type Identifier = (String, String);
