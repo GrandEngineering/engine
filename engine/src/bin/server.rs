@@ -1,6 +1,5 @@
 use bincode::{deserialize, serialize};
-use enginelib::event::{EngineAPI, OnStartEvent};
-use enginelib::{event, Identifier, Registry};
+use enginelib::{api::EngineAPI, event, events, Identifier, Registry};
 #[cfg(unix)]
 use libloading::os::unix::*;
 use proto::engine_server::{Engine, EngineServer};
@@ -57,7 +56,7 @@ impl Engine for EngineService {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db: sled::Db = sled::open("engine_db")?;
-    let mut api = event::EngineAPI::default();
+    let mut api = EngineAPI::default();
     let start_event = ("core".to_string(), "onstartevent".to_string());
     unsafe {
         let lib = Library::new("target/debug/libengine_core.so").unwrap();
@@ -81,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     api.event_bus.handle(
         start_event.clone(),
-        &mut OnStartEvent {
+        &mut events::start_event::StartEvent {
             cancelled: false,
             id: start_event.clone(),
             modules: api.modules.values().cloned().collect(),

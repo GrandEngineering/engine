@@ -1,6 +1,7 @@
-use enginelib::Runner;
+use enginelib::api::EngineAPI;
+use enginelib::task::Task;
 //use enginelib::EventHandler;
-use enginelib::{event, Registry, Task};
+use enginelib::{event, Registry};
 use libloading::Library;
 use libloading::Symbol;
 use prost::Message;
@@ -22,11 +23,10 @@ pub mod proto {
 async fn main() -> Result<(), Box<dyn Error>> {
     let url = "http://[::1]:50051";
 
-    let mut api = event::EngineAPI::default();
+    let mut api = EngineAPI::default();
     unsafe {
         let lib = Library::new("target/debug/libengine_core.so").unwrap();
-        let run: Symbol<unsafe extern "Rust" fn(reg: &mut event::EngineAPI)> =
-            lib.get(b"run").unwrap();
+        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> = lib.get(b"run").unwrap();
         run(&mut api);
     }
 

@@ -1,11 +1,10 @@
-use enginelib::event::{info, EngineAPI, Event, EventCTX, EventHandler};
-use enginelib::{BuildEventHandler, Identifier, ModCTX};
-//use enginelib::EventHandler;
-use enginelib::{event, event::OnStartEvent, Registry, Task};
-use std::any::Any;
 use std::fmt::Debug;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
+use enginelib::api::EngineAPI;
+use enginelib::event::info;
+use enginelib::task::Task;
+use enginelib::{events, ModCTX};
 #[derive(Debug, Clone, Default)]
 pub struct FibTask {
     pub iter: u64,
@@ -38,7 +37,7 @@ impl Task for FibTask {
     }
 }
 #[no_mangle]
-pub fn run(api: &mut event::EngineAPI) {
+pub fn run(api: &mut EngineAPI) {
     EngineAPI::setup_logger();
     let mod_id = "namespace".to_string();
     let task_id = "fib".to_string();
@@ -53,9 +52,9 @@ pub fn run(api: &mut event::EngineAPI) {
 
     BuildEventHandler!(
         OnStartEventHandler,
-        OnStartEvent,
+        events::start_event::StartEvent,
         mod_ctx,
-        |event: &mut OnStartEvent, mod_ctx: ModCTX| {
+        |event: &mut events::start_event::StartEvent, mod_ctx: ModCTX| {
             for n in event.modules.clone() {
                 info!("Module: {:?}", n);
             }
