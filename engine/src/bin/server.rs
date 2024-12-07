@@ -70,11 +70,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .get(&("namespace".to_string(), "fib".to_string()))
     );
     api.event_bus.event_registry.register(
-        //with any valid state
-        Arc::new(event::OnStartEvent {
-            cancelled: false,
+        Arc::new(events::start_event::StartEvent {
             modules: api.modules.values().cloned().collect(),
             id: start_event.clone(),
+            cancelled: false,
         }),
         start_event.clone(),
     );
