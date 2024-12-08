@@ -58,6 +58,7 @@ pub struct EngineTaskRegistry {
 impl Registry<dyn Task> for EngineTaskRegistry {
     fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier) {
         // Insert the task into the hashmap with (mod_id, identifier) as the key
+        println!("Inserting task into reg");
         self.tasks.insert(identifier, task);
     }
 

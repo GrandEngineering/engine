@@ -26,7 +26,6 @@ pub struct EventBus {
     pub event_registry: EngineEventRegistry,
     pub event_handler_registry: EngineEventHandlerRegistry,
 }
-
 pub trait Event: Any + Send + Sync {
     fn clone_box(&self) -> Box<dyn Event>;
     fn cancel(&mut self);
@@ -110,16 +109,18 @@ impl Event for OnStartEvent {
 }
 
 impl EventBus {
-    pub fn handle<T: Event + 'static>(&self, id: Identifier, event: &mut T) {
+    pub fn handle<T: Event>(&self, id: Identifier, event: &mut T) {
         #[cfg(debug_assertions)]
-        println!("Handling event: {:?}", &event.get_id());
-
-        let handlers: &Vec<Arc<dyn EventHandler>> =
-            self.event_handler_registry.event_handlers.get(&id).unwrap();
-
-        for handler in handlers {
-            let event = event.as_any_mut().downcast_mut::<T>().unwrap();
-            handler.handle(event)
+        println!("Handling events: {:?}", &event.get_id());
+        let handlers: Option<&Vec<Arc<dyn EventHandler>>> =
+            self.event_handler_registry.event_handlers.get(&id);
+        if let Some(handlers) = handlers {
+            for handler in handlers {
+                let event = event.as_any_mut().downcast_mut::<T>().unwrap();
+                handler.handle(event)
+            }
+        } else {
+            println!("No EventHandlers subscribed to {:?}:{:?}", id.0, id.1)
         }
     }
 }
