@@ -22,9 +22,9 @@ mod proto {
 #[allow(non_snake_case)]
 struct EngineService {
     pub EngineAPI: EngineAPI,
+    pub libs: LibraryManager,
     pub db: sled::Db,
 }
-
 #[tonic::async_trait]
 impl Engine for EngineService {
     async fn aquire_task_reg(
@@ -81,7 +81,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let addr = "[::1]:50051".parse().unwrap();
     let db: sled::Db = sled::open("engine_db")?;
-    let engine = EngineService { EngineAPI: api, db };
+    let engine = EngineService {
+        EngineAPI: api,
+        libs: lib_manager,
+        db,
+    };
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
         .build_v1alpha()
@@ -92,5 +96,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_service(EngineServer::new(engine))
         .serve(addr)
         .await?;
+
     Ok(())
 }
