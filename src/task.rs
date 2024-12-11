@@ -5,7 +5,7 @@ use tracing::event as tevent;
 use tracing::instrument;
 use tracing::Level;
 
-pub trait Task: Debug + Sync + Send + 'static {
+pub trait Task: Debug + Sync + Send {
     fn clone_box(&self) -> Box<dyn Task>;
     #[instrument]
     fn run_hip(&mut self) {

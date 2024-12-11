@@ -1,10 +1,10 @@
 use std::{any::Any, process, sync::Arc};
 
-use crate::{event::Event, Identifier, ModCTX};
+use crate::{event::Event, plugin::LibraryMetadata, Identifier};
 
 #[derive(Clone)]
 pub struct StartEvent {
-    pub modules: Vec<Arc<ModCTX>>,
+    pub modules: Vec<Arc<LibraryMetadata>>,
     pub cancelled: bool,
     pub id: Identifier,
 }

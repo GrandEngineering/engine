@@ -1,5 +1,6 @@
+use crate::plugin::LibraryInstance;
+use crate::plugin::LibraryMetadata;
 use crate::Identifier;
-use crate::ModCTX;
 use crate::Registry;
 use std::any::Any;
 use std::collections::HashMap;
@@ -79,7 +80,7 @@ impl Registry<dyn Event> for EngineEventRegistry {
 }
 #[derive(Clone)]
 pub struct OnStartEvent {
-    pub modules: Vec<Arc<ModCTX>>,
+    pub modules: Vec<Arc<LibraryInstance>>,
     pub cancelled: bool,
     pub id: Identifier,
 }
