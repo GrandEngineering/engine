@@ -1,12 +1,23 @@
 #[macro_export]
+macro_rules! register_event {
+    ($api:expr,$name:ident,$default_state:expr) => {
+        use crate::Registry;
+        let $name = ID("core", stringify!($name));
+        $api.event_bus
+            .event_registry
+            .register(Arc::new($default_state), $name.clone());
+    };
+}
+
+#[macro_export]
 macro_rules! BuildEventHandler {
-    ($handler:ident,$event:ty,$mod_ctx:expr, $handler_fn:expr) => {
+    ($handler:ident,$event:ty,$mod_ctx:ty, $handler_fn:expr) => {
         use std::sync::Arc;
         pub struct $handler {
-            mod_ctx: Arc<LibraryMetadata>,
+            mod_ctx: Arc<$mod_ctx>,
         };
         impl $handler {
-            pub fn new(mod_ctx: Arc<LibraryMetadata>) -> Self {
+            pub fn new(mod_ctx: Arc<$mod_ctx>) -> Self {
                 Self { mod_ctx }
             }
         }
@@ -18,7 +29,7 @@ macro_rules! BuildEventHandler {
         }
         impl EventCTX<$event> for $handler {
             fn handleCTX(&self, event: &mut $event) {
-                let mod_ctx: &Arc<LibraryMetadata> = &self.mod_ctx;
+                let mod_ctx: &Arc<$mod_ctx> = &self.mod_ctx;
                 $handler_fn(event, mod_ctx)
             }
         }

@@ -2,6 +2,7 @@ use std::{fmt::Debug, sync::Arc};
 pub mod api;
 pub mod event;
 pub mod events;
+#[macro_use]
 pub mod macros;
 pub mod plugin;
 pub mod prelude;
