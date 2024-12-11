@@ -1,5 +1,10 @@
 use bincode::serialize;
-use enginelib::{api::EngineAPI, events, Identifier, Registry};
+use enginelib::{
+    api::EngineAPI,
+    events::{self, Events, ID},
+    plugin::LibraryManager,
+    Identifier, Registry,
+};
 #[cfg(unix)]
 use libloading::os::unix::*;
 use proto::engine_server::{Engine, EngineServer};
@@ -56,35 +61,19 @@ impl Engine for EngineService {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
-    let start_event = ("core".to_string(), "onstartevent".to_string());
-    unsafe {
-        let lib = Library::new("target/debug/libengine_core.so").unwrap();
-        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> = lib.get(b"run").unwrap();
-        run(&mut api);
-    }
-    println!(
-        "BIN:{:?}",
-        api.task_registry
-            .tasks
-            .get(&("namespace".to_string(), "fib".to_string()))
-    );
-    api.event_bus.event_registry.register(
-        Arc::new(events::start_event::StartEvent {
-            modules: api.modules.values().cloned().collect(),
-            id: start_event.clone(),
-            cancelled: false,
-        }),
-        start_event.clone(),
-    );
+    Events::init(&mut api);
+    let mut lib_manager = LibraryManager::default();
+    lib_manager.register_module("target/debug/libengine_core.so", &mut api);
+
     api.event_bus.handle(
-        start_event.clone(),
+        ID("core", "start_event"),
         &mut events::start_event::StartEvent {
             cancelled: false,
-            id: start_event.clone(),
-            modules: api.modules.values().cloned().collect(),
+            id: ID("core", "start_event").clone(),
+            modules: vec![],
         },
     );
-    println!("WORKS");
+
     let addr = "[::1]:50051".parse().unwrap();
     let db: sled::Db = sled::open("engine_db")?;
     let engine = EngineService { EngineAPI: api, db };

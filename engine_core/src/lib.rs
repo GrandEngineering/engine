@@ -4,9 +4,9 @@ use enginelib::event::Event;
 use enginelib::event::EventCTX;
 use enginelib::event::EventHandler;
 use enginelib::events;
+use enginelib::plugin::LibraryMetadata;
 use enginelib::task::Task;
 use enginelib::BuildEventHandler;
-use enginelib::ModCTX;
 use enginelib::Registry;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -42,24 +42,24 @@ impl Task for FibTask {
     }
 }
 #[no_mangle]
-pub fn run(api: &mut EngineAPI) {
+pub fn run(api: &mut EngineAPI) -> LibraryMetadata {
     EngineAPI::setup_logger();
     let mod_id = "namespace".to_string();
     let task_id = "fib".to_string();
 
-    let mod_ctx = api.register_module(ModCTX {
+    let meta: LibraryMetadata = LibraryMetadata {
         mod_id: mod_id.clone(),
         mod_author: "@ign-styly".to_string(),
         mod_name: "Example Mod".to_string(),
         mod_version: "0.0.1".to_string(),
         ..Default::default()
-    });
-
+    };
+    let mod_ctx = Arc::new(meta.clone());
     BuildEventHandler!(
         OnStartEventHandler,
         events::start_event::StartEvent,
-        mod_ctx,
-        |event: &mut events::start_event::StartEvent, mod_ctx: ModCTX| {
+        LibraryMetadata,
+        |event: &mut events::start_event::StartEvent, mod_ctx: &Arc<LibraryMetadata>| {
             for n in event.modules.clone() {
                 info!("Module: {:?}", n);
             }
@@ -74,7 +74,8 @@ pub fn run(api: &mut EngineAPI) {
         .register(tsk_ref, (mod_id.clone(), task_id.clone()));
     api.event_bus.event_handler_registry.register_handler(
         OnStartEventHandler { mod_ctx },
-        ("core".to_string(), "onstartevent".to_string()),
+        ("core".to_string(), "start_event".to_string()),
     );
     println!("Registered task: {}:{}", &mod_id, &task_id);
+    meta
 }
