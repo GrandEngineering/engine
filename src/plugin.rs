@@ -33,6 +33,10 @@ pub struct LibraryManager {
 }
 
 impl LibraryManager {
+    pub fn drop(self, api: EngineAPI) {
+        drop(api);
+        drop(self);
+    }
     pub fn register_module(&mut self, path: &str, api: &mut EngineAPI) {
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
         let metadata: LibraryMetadata;
