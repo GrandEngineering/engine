@@ -70,7 +70,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &mut events::start_event::StartEvent {
             cancelled: false,
             id: ID("core", "start_event").clone(),
-            modules: vec![],
+            modules: lib_manager
+                .libraries
+                .values()
+                .cloned()
+                .map(|lib| lib.metadata)
+                .collect(),
         },
     );
 

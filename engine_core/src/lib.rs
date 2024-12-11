@@ -76,6 +76,5 @@ pub fn run(api: &mut EngineAPI) -> LibraryMetadata {
         OnStartEventHandler { mod_ctx },
         ("core".to_string(), "start_event".to_string()),
     );
-    println!("Registered task: {}:{}", &mod_id, &task_id);
     meta
 }
