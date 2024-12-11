@@ -6,7 +6,6 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::process;
 use std::sync::Arc;
-
 pub use tracing::{debug, error, event, info, warn};
 // The Actual Fuck
 // this fucking piece of god given code saves so much time
@@ -60,7 +59,10 @@ impl EngineEventHandlerRegistry {
         let handler = Arc::new(handler);
         let handlers = self.event_handlers.entry(identifier.clone()).or_default();
         handlers.push(handler);
-        println!("Handler registered for event ID: {:?}", identifier.clone());
+        debug!(
+            "Event Handler registered for event ID: {:?}",
+            identifier.clone()
+        );
     }
 }
 impl Clone for Box<dyn Event> {
@@ -71,7 +73,7 @@ impl Clone for Box<dyn Event> {
 impl Registry<dyn Event> for EngineEventRegistry {
     fn register(&mut self, registree: Arc<dyn Event>, identifier: Identifier) {
         self.events.insert(identifier.clone(), registree);
-        println!("Event registered with ID: {:?}", identifier.clone());
+        debug!("Event registered with ID: {:?}", identifier.clone());
     }
 
     fn get(&self, identifier: &Identifier) -> Option<Box<dyn Event>> {
@@ -112,7 +114,7 @@ impl Event for OnStartEvent {
 impl EventBus {
     pub fn handle<T: Event>(&self, id: Identifier, event: &mut T) {
         #[cfg(debug_assertions)]
-        println!("Handling events: {:?}", &event.get_id());
+        debug!("Handling events: {:?}", &event.get_id());
         let handlers: Option<&Vec<Arc<dyn EventHandler>>> =
             self.event_handler_registry.event_handlers.get(&id);
         if let Some(handlers) = handlers {
@@ -121,7 +123,7 @@ impl EventBus {
                 handler.handle(event)
             }
         } else {
-            println!("No EventHandlers subscribed to {:?}:{:?}", id.0, id.1)
+            debug!("No EventHandlers subscribed to {:?}:{:?}", id.0, id.1)
         }
     }
 }

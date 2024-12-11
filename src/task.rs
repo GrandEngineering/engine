@@ -1,22 +1,22 @@
 use std::{fmt::Debug, sync::Arc};
 
 use crate::Identifier;
+use tracing::error;
 use tracing::event as tevent;
 use tracing::instrument;
+use tracing::warn;
 use tracing::Level;
 
 pub trait Task: Debug + Sync + Send {
     fn clone_box(&self) -> Box<dyn Task>;
     #[instrument]
     fn run_hip(&mut self) {
-        println!("HIP Runtime not available, falling back to CPU");
+        warn!("HIP Runtime not available, falling back to CPU");
         self.run_cpu();
     }
     #[instrument]
     fn run_cpu(&mut self) {
-        tevent!(Level::ERROR, "CPU run not Implemented");
-        println!("Hi Mom!")
-        //panic!("CPU run not Implemented");
+        error!("CPU run not Implemented");
     }
     #[instrument]
     fn run(&mut self, run: Option<Runner>) {

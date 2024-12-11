@@ -1,4 +1,4 @@
-use tracing::Level;
+use tracing::{debug, info, Level};
 
 use crate::{
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},
@@ -36,6 +36,14 @@ impl Default for EngineAPI {
 }
 impl EngineAPI {
     pub fn setup_logger() {
+        #[cfg(debug_assertions)]
+        tracing_subscriber::FmtSubscriber::builder()
+            // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
+            // will be written to stdout.
+            .with_max_level(Level::DEBUG)
+            // builds the subscriber.
+            .init();
+        #[cfg(not(debug_assertions))]
         tracing_subscriber::FmtSubscriber::builder()
             // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
             // will be written to stdout.
@@ -51,7 +59,7 @@ pub struct EngineTaskRegistry {
 impl Registry<dyn Task> for EngineTaskRegistry {
     fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier) {
         // Insert the task into the hashmap with (mod_id, identifier) as the key
-        println!("Inserting task into reg");
+        debug!("Inserting task into registry");
         self.tasks.insert(identifier, task);
     }
 
