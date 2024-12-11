@@ -3,12 +3,14 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::mem::ManuallyDrop;
 use std::sync::{Arc, RwLock};
+use tracing::field::debug;
+use tracing::{debug, info};
 
 use crate::api::EngineAPI;
-
+#[derive(Clone, Debug)]
 pub struct LibraryInstance {
     dynamicLibrary: Arc<ManuallyDrop<Library>>,
-    metadata: Arc<LibraryMetadata>,
+    pub metadata: Arc<LibraryMetadata>,
 }
 #[derive(Debug, Clone, Default)]
 pub struct LibraryMetadata {
@@ -27,7 +29,7 @@ pub struct LibraryMetadata {
 }
 #[derive(Default, Clone)]
 pub struct LibraryManager {
-    libraries: HashMap<String, Arc<LibraryInstance>>,
+    pub libraries: HashMap<String, LibraryInstance>,
 }
 
 impl LibraryManager {
@@ -43,10 +45,14 @@ impl LibraryManager {
         };
         self.libraries.insert(
             metadata.mod_id.clone(),
-            Arc::new(LibraryInstance {
+            LibraryInstance {
                 dynamicLibrary: Arc::new(ManuallyDrop::new(lib)),
-                metadata: Arc::new(metadata),
-            }),
+                metadata: Arc::new(metadata.clone()),
+            },
         );
+        debug!(
+            "Module {} Loaded, made by {}",
+            metadata.mod_name, metadata.mod_author
+        )
     }
 }
