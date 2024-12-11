@@ -1,6 +1,7 @@
 use libloading::{Library, Symbol};
 use std::any::Any;
 use std::collections::HashMap;
+use std::mem::ManuallyDrop;
 use std::sync::{Arc, RwLock};
 
 use crate::api::EngineAPI;
@@ -24,26 +25,28 @@ pub struct LibraryMetadata {
     pub mod_display_url: String,
     pub mod_issue_tracker: String,
 }
-
+#[derive(Default, Clone)]
 pub struct LibraryManager {
     libraries: HashMap<String, Arc<LibraryInstance>>,
 }
 
 impl LibraryManager {
-    fn new() -> Self {
-        Self {
-            libraries: HashMap::new(),
-        }
-    }
-    fn register_module(path: String, api: &mut EngineAPI) {
+    pub fn register_module(&mut self, path: &str, api: &mut EngineAPI) {
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
+        let metadata: LibraryMetadata;
         let lib = unsafe {
-            let library = Library::new("target/debug/libengine_core.so").unwrap();
-            let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> =
+            let library = Library::new(path).unwrap();
+            let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI) -> LibraryMetadata> =
                 library.get(b"run").unwrap();
-            run(api);
-            library // Return the library to keep it in scope
+            metadata = run(api);
+            library
         };
-        std::mem::forget(lib);
+        self.libraries.insert(
+            metadata.mod_id.clone(),
+            Arc::new(LibraryInstance {
+                dynamicLibrary: Arc::new(lib),
+                metadata: Arc::new(metadata),
+            }),
+        );
     }
 }
