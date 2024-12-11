@@ -16,11 +16,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let url = "http://[::1]:50051";
 
     let mut api = EngineAPI::default();
-    unsafe {
-        let lib = Library::new("target/debug/libengine_core.so").unwrap();
-        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> = lib.get(b"run").unwrap();
+
+    let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
+    let lib = unsafe {
+        let library = Library::new("target/debug/libengine_core.so").unwrap();
+        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> =
+            library.get(b"run").unwrap();
         run(&mut api);
-    }
+        library // Return the library to keep it in scope
+    };
+    std::mem::forget(lib);
 
     // let mut client = EngineClient::connect(url).await?;
     let req = proto::TaskRequest {

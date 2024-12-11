@@ -69,10 +69,9 @@ pub fn run(api: &mut EngineAPI) {
             );
         }
     );
-    api.task_registry.register(
-        Arc::new(FibTask::default()),
-        (mod_id.clone(), task_id.clone()),
-    );
+    let tsk_ref = Arc::new(FibTask::default());
+    api.task_registry
+        .register(tsk_ref, (mod_id.clone(), task_id.clone()));
     api.event_bus.event_handler_registry.register_handler(
         OnStartEventHandler { mod_ctx },
         ("core".to_string(), "onstartevent".to_string()),
