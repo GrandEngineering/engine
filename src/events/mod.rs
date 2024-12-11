@@ -5,17 +5,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 pub mod start_event;
 
-pub struct Events {
-    events: HashMap<Identifier, Arc<dyn Event>>,
-}
+pub struct Events {}
 pub fn ID(namespace: &str, id: &str) -> Identifier {
     (namespace.to_string(), id.to_string())
 }
 impl Events {
-    pub fn init(api: &mut EngineAPI) -> Self {
-        let inst = Self {
-            events: HashMap::new(),
-        };
+    pub fn init(api: &mut EngineAPI) {
         //Register Events to the Default impl for less boilerplate
         crate::register_event!(
             api,
@@ -26,6 +21,5 @@ impl Events {
                 cancelled: false,
             }
         );
-        inst
     }
 }

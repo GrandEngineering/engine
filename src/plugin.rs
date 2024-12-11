@@ -7,7 +7,7 @@ use std::sync::{Arc, RwLock};
 use crate::api::EngineAPI;
 
 pub struct LibraryInstance {
-    dynamicLibrary: Arc<Library>,
+    dynamicLibrary: Arc<ManuallyDrop<Library>>,
     metadata: Arc<LibraryMetadata>,
 }
 #[derive(Debug, Clone, Default)]
@@ -44,7 +44,7 @@ impl LibraryManager {
         self.libraries.insert(
             metadata.mod_id.clone(),
             Arc::new(LibraryInstance {
-                dynamicLibrary: Arc::new(lib),
+                dynamicLibrary: Arc::new(ManuallyDrop::new(lib)),
                 metadata: Arc::new(metadata),
             }),
         );
