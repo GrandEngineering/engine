@@ -63,8 +63,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
     Events::init(&mut api);
     let mut lib_manager = LibraryManager::default();
+    #[cfg(debug_assertions)]
     lib_manager.register_module("target/debug/libengine_core.so", &mut api);
-
+    #[cfg(not(debug_assertions))]
+    lib_manager.register_module("target/release/libengine_core.so", &mut api);
     api.event_bus.handle(
         ID("core", "start_event"),
         &mut events::start_event::StartEvent {
