@@ -1,0 +1,29 @@
+[monorepo]
+name = "engine"
+display_name = "GE Engine"
+git = "git@github.com:GrandEngineering/engine.git"
+run = "cargo build && cargo run --bin server"
+opt_run = "cargo build --release && cargo run --bin server --release"
+build = "cargo build"
+opt_build = "cargo build --release"
+[[monorepo.libs]]
+name = "enginelib"
+build = "cargo build"
+opt_build = "cargo build --release"
+[[monorepo.libs]]
+name = "engine_core"
+build = "cargo build"
+opt_build = "cargo build --release"
+
+[[monorepo.bins]]
+name = "server"
+build = "cargo build"
+opt_build = "cargo build --release"
+run = "cargo run --bin server"
+opt_run = "cargo run --bin server --release"
+[[monorepo.bins]]
+name = "client"
+build = "cargo build"
+opt_build = "cargo build --release"
+run = "cargo run --bin client"
+opt_run = "cargo run --bin client --release"
