@@ -56,27 +56,37 @@ impl LibraryManager {
         drop(self);
     }
     pub fn register_module(&mut self, path: &str, api: &mut EngineAPI) {
+        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
         let (lib, metadata): (Library, LibraryMetadata) = unsafe {
             let library = Library::new(path).unwrap();
             let metadataFN: Symbol<unsafe extern "Rust" fn() -> LibraryMetadata> =
                 library.get(b"metadata").unwrap();
-            let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> =
-                library.get(b"run").unwrap();
             let metadata: LibraryMetadata = metadataFN();
-            run(api);
             (library, metadata)
         };
-
-        self.libraries.insert(
-            metadata.mod_id.clone(),
-            LibraryInstance {
-                dynamicLibrary: Arc::new(ManuallyDrop::new(lib)),
-                metadata: Arc::new(metadata.clone()),
-            },
-        );
-        debug!(
-            "Module {} Loaded, made by {}",
-            metadata.mod_name, metadata.mod_author
-        )
+        if metadata.api_version == crate::GIT_VERSION
+            && metadata.rustc_version == crate::RUSTC_VERSION
+        {
+            unsafe {
+                run = lib.get(b"run").unwrap();
+                run(api);
+            }
+            self.libraries.insert(
+                metadata.mod_id.clone(),
+                LibraryInstance {
+                    dynamicLibrary: Arc::new(ManuallyDrop::new(lib)),
+                    metadata: Arc::new(metadata.clone()),
+                },
+            );
+            debug!(
+                "Module {} Loaded, made by {}",
+                metadata.mod_name, metadata.mod_author
+            )
+        } else {
+            info!(
+                "Module {} was not loaded due to version mismatch, Lib API: {}, Engine API: {}, Lib Rustc: {}, Engine Rustc: {}",
+                metadata.mod_name, metadata.api_version, crate::GIT_VERSION, metadata.rustc_version, crate::RUSTC_VERSION
+            );
+        }
     }
 }
