@@ -76,7 +76,7 @@ pub fn run(api: &mut EngineAPI) {
             }
             info!(
                 "Event {:?} Handled by: {:?}, made by {}",
-                event.id, &mod_ctx.mod_name, &mod_ctx.mod_author
+                event.id, &mod_ctx.mod_name, &mod_ctx.mod_author,
             );
         }
     );
