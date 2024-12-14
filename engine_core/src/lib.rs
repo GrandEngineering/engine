@@ -42,9 +42,20 @@ impl Task for FibTask {
     }
 }
 #[no_mangle]
-pub fn run(api: &mut EngineAPI) -> LibraryMetadata {
+pub fn metadata() -> LibraryMetadata {
+    let meta: LibraryMetadata = LibraryMetadata {
+        mod_id: "engine_core".to_owned(),
+        mod_author: "@ign-styly".to_string(),
+        mod_name: "Engine Core".to_string(),
+        mod_version: "0.0.1".to_string(),
+        ..Default::default()
+    };
+    meta
+}
+#[no_mangle]
+pub fn run(api: &mut EngineAPI) {
     EngineAPI::setup_logger();
-    let mod_id = "namespace".to_string();
+    let mod_id = "engine_core".to_string();
     let task_id = "fib".to_string();
 
     let meta: LibraryMetadata = LibraryMetadata {
@@ -76,5 +87,4 @@ pub fn run(api: &mut EngineAPI) -> LibraryMetadata {
         OnStartEventHandler { mod_ctx },
         ("core".to_string(), "start_event".to_string()),
     );
-    meta
 }

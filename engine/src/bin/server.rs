@@ -63,10 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
     Events::init(&mut api);
     let mut lib_manager = LibraryManager::default();
-    #[cfg(debug_assertions)]
     lib_manager.register_module("target/debug/libengine_core.so", &mut api);
-    #[cfg(not(debug_assertions))]
-    lib_manager.register_module("target/release/libengine_core.so", &mut api);
     api.event_bus.handle(
         ID("core", "start_event"),
         &mut events::start_event::StartEvent {
@@ -88,6 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         libs: lib_manager,
         db,
     };
+
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
         .build_v1alpha()
