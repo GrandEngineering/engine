@@ -12,12 +12,12 @@ pub struct LibraryInstance {
     dynamicLibrary: Arc<ManuallyDrop<Library>>,
     pub metadata: Arc<LibraryMetadata>,
 }
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct LibraryMetadata {
     pub mod_id: String,
     pub mod_author: String,
-    //pub rustc_version: String,
-    //pub api_version:String,
+    pub rustc_version: String,
+    pub api_version: String,
     pub mod_name: String,
     pub mod_version: String,
     pub mod_description: String,
@@ -26,6 +26,24 @@ pub struct LibraryMetadata {
     pub mod_dependencies: Vec<String>,
     pub mod_display_url: String,
     pub mod_issue_tracker: String,
+}
+impl Default for LibraryMetadata {
+    fn default() -> Self {
+        Self {
+            mod_id: String::new(),
+            mod_author: String::new(),
+            rustc_version: crate::RUSTC_VERSION.to_string(),
+            api_version: crate::GIT_VERSION.to_string(),
+            mod_name: String::new(),
+            mod_version: String::new(),
+            mod_description: String::new(),
+            mod_license: String::new(),
+            mod_credits: String::new(),
+            mod_dependencies: Vec::new(),
+            mod_display_url: String::new(),
+            mod_issue_tracker: String::new(),
+        }
+    }
 }
 #[derive(Default, Clone)]
 pub struct LibraryManager {
@@ -38,15 +56,17 @@ impl LibraryManager {
         drop(self);
     }
     pub fn register_module(&mut self, path: &str, api: &mut EngineAPI) {
-        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
-        let metadata: LibraryMetadata;
-        let lib = unsafe {
+        let (lib, metadata): (Library, LibraryMetadata) = unsafe {
             let library = Library::new(path).unwrap();
-            let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI) -> LibraryMetadata> =
+            let metadataFN: Symbol<unsafe extern "Rust" fn() -> LibraryMetadata> =
+                library.get(b"metadata").unwrap();
+            let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)> =
                 library.get(b"run").unwrap();
-            metadata = run(api);
-            library
+            let metadata: LibraryMetadata = metadataFN();
+            run(api);
+            (library, metadata)
         };
+
         self.libraries.insert(
             metadata.mod_id.clone(),
             LibraryInstance {

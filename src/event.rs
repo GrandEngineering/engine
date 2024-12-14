@@ -6,6 +6,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::process;
 use std::sync::Arc;
+use tracing::instrument;
 pub use tracing::{debug, error, event, info, warn};
 // The Actual Fuck
 // this fucking piece of god given code saves so much time
@@ -26,6 +27,7 @@ pub struct EventBus {
     pub event_registry: EngineEventRegistry,
     pub event_handler_registry: EngineEventHandlerRegistry,
 }
+
 pub trait Event: Any + Send + Sync {
     fn clone_box(&self) -> Box<dyn Event>;
     fn cancel(&mut self);
@@ -113,14 +115,17 @@ impl Event for OnStartEvent {
 
 impl EventBus {
     pub fn handle<T: Event>(&self, id: Identifier, event: &mut T) {
-        #[cfg(debug_assertions)]
         debug!("Handling events: {:?}", &event.get_id());
         let handlers: Option<&Vec<Arc<dyn EventHandler>>> =
             self.event_handler_registry.event_handlers.get(&id);
+
         if let Some(handlers) = handlers {
             for handler in handlers {
-                let event = event.as_any_mut().downcast_mut::<T>().unwrap();
-                handler.handle(event)
+                if let Some(event) = event.as_any_mut().downcast_mut::<T>() {
+                    handler.handle(event)
+                } else {
+                    error!("Failed to downcast event during handling");
+                }
             }
         } else {
             debug!("No EventHandlers subscribed to {:?}:{:?}", id.0, id.1)
