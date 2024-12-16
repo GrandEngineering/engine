@@ -1,2 +1,2 @@
 [workspace]
-members = ["engine", "engine_core", "engine_core_build", "enginelib"]
+members = ["engine", "engine_core", "enginelib"]
