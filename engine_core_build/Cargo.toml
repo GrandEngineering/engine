@@ -1,7 +1,0 @@
-[package]
-name = "engine_core_build"
-version = "0.1.0"
-edition = "2021"
-
-[build-dependencies]
-oxifs = "0.1.0"
