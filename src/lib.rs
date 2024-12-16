@@ -1,4 +1,4 @@
-use std::{fmt::Debug, sync::Arc};
+use std::sync::Arc;
 pub mod api;
 pub mod event;
 pub mod events;

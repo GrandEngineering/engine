@@ -1,4 +1,4 @@
-use tracing::{debug, info, Level};
+use tracing::{debug, Level};
 
 use crate::{
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},

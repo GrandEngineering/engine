@@ -1,12 +1,10 @@
 use crate::plugin::LibraryInstance;
-use crate::plugin::LibraryMetadata;
 use crate::Identifier;
 use crate::Registry;
 use std::any::Any;
 use std::collections::HashMap;
 use std::process;
 use std::sync::Arc;
-use tracing::instrument;
 pub use tracing::{debug, error, event, info, warn};
 // The Actual Fuck
 // this fucking piece of god given code saves so much time

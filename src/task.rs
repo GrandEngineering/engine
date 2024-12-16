@@ -2,10 +2,8 @@ use std::{fmt::Debug, sync::Arc};
 
 use crate::Identifier;
 use tracing::error;
-use tracing::event as tevent;
 use tracing::instrument;
 use tracing::warn;
-use tracing::Level;
 
 pub trait Task: Debug + Sync + Send {
     fn clone_box(&self) -> Box<dyn Task>;

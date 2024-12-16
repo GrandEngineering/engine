@@ -1,9 +1,7 @@
 use libloading::{Library, Symbol};
-use std::any::Any;
 use std::collections::HashMap;
 use std::mem::ManuallyDrop;
-use std::sync::{Arc, RwLock};
-use tracing::field::debug;
+use std::sync::Arc;
 use tracing::{debug, info};
 
 use crate::api::EngineAPI;
