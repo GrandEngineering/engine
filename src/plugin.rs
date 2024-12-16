@@ -1,10 +1,10 @@
+use crate::api::EngineAPI;
 use libloading::{Library, Symbol};
+use oxifs::OxiFS;
 use std::collections::HashMap;
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
 use tracing::{debug, info};
-
-use crate::api::EngineAPI;
 #[derive(Clone, Debug)]
 pub struct LibraryInstance {
     dynamicLibrary: Arc<ManuallyDrop<Library>>,
@@ -52,6 +52,14 @@ impl LibraryManager {
     pub fn drop(self, api: EngineAPI) {
         drop(api);
         drop(self);
+    }
+    pub fn load_module(&mut self, path: &str, api: &mut EngineAPI) {
+        let fs = OxiFS::new(path);
+        let tmp_path = fs.tempdir.path();
+        #[cfg(unix)]
+        self.register_module(tmp_path.join("mod.so").to_str().unwrap(), api);
+        #[cfg(windows)]
+        self.register_module(tmp_path.join("mod.dll").to_str().unwrap(), api);
     }
     pub fn register_module(&mut self, path: &str, api: &mut EngineAPI) {
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
