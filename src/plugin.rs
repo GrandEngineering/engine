@@ -57,11 +57,11 @@ impl LibraryManager {
         let fs = OxiFS::new(path);
         let tmp_path = fs.tempdir.path();
         #[cfg(unix)]
-        self.register_module(tmp_path.join("mod.so").to_str().unwrap(), api);
+        self.load_library(tmp_path.join("mod.so").to_str().unwrap(), api);
         #[cfg(windows)]
-        self.register_module(tmp_path.join("mod.dll").to_str().unwrap(), api);
+        self.load_library(tmp_path.join("mod.dll").to_str().unwrap(), api);
     }
-    pub fn register_module(&mut self, path: &str, api: &mut EngineAPI) {
+    pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) {
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
         let (lib, metadata): (Library, LibraryMetadata) = unsafe {
             let library = Library::new(path).unwrap();

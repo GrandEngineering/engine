@@ -8,7 +8,24 @@ pub struct StartEvent {
     pub cancelled: bool,
     pub id: Identifier,
 }
-
+#[macro_export]
+macro_rules! StartEvent {
+    ($lib_manager:expr, $api:expr) => {
+        $api.event_bus.handle(
+            ID("core", "start_event"),
+            &mut events::start_event::StartEvent {
+                cancelled: false,
+                id: ID("core", "start_event").clone(),
+                modules: $lib_manager
+                    .libraries
+                    .values()
+                    .cloned()
+                    .map(|lib| lib.metadata)
+                    .collect(),
+            },
+        );
+    };
+}
 impl Event for StartEvent {
     fn clone_box(&self) -> Box<dyn Event> {
         Box::new(self.clone())
