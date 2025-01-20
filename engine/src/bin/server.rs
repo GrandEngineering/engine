@@ -3,16 +3,11 @@ use enginelib::{
     api::EngineAPI,
     events::{self, Events, ID},
     plugin::LibraryManager,
-    Identifier, Registry,
+    Identifier, RawIdentier, Registry, StartEvent,
 };
-#[cfg(unix)]
-use libloading::os::unix::*;
 use proto::engine_server::{Engine, EngineServer};
 use std::sync::Arc;
 use tonic::transport::Server;
-
-#[cfg(windows)]
-use libloading::os::windows::*;
 
 mod proto {
     tonic::include_proto!("engine");
@@ -31,9 +26,11 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
-        let mut tasks: Vec<Identifier> = Vec::new();
+        let mut tasks: Vec<RawIdentier> = Vec::new();
         for (k, v) in &self.EngineAPI.task_registry.tasks {
-            tasks.push(k.clone());
+            let js: Vec<String> = vec![k.0.clone(), k.1.clone()];
+            let jstr = js.join(":");
+            tasks.push(jstr);
         }
         let response = proto::TaskRegistry {
             tasks: serialize(&tasks).unwrap(),
@@ -44,6 +41,7 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::TaskRequest>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
+        // Todo: check for wrong input to not cause a Panic out of bounds.
         let input = request.get_ref();
         println!("Got a request {:?}", input);
         let task_id = String::from_utf8(input.task_id.clone()).unwrap();
@@ -63,20 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
     Events::init(&mut api);
     let mut lib_manager = LibraryManager::default();
-    lib_manager.load_module("target/debug/mods/engine_core.tar", &mut api);
-    api.event_bus.handle(
-        ID("core", "start_event"),
-        &mut events::start_event::StartEvent {
-            cancelled: false,
-            id: ID("core", "start_event").clone(),
-            modules: lib_manager
-                .libraries
-                .values()
-                .cloned()
-                .map(|lib| lib.metadata)
-                .collect(),
-        },
-    );
+    lib_manager.load_library("target/debug/libengine_core.so", &mut api);
+    StartEvent!(lib_manager, api);
 
     let addr = "[::1]:50051".parse().unwrap();
     let db: sled::Db = sled::open("engine_db")?;

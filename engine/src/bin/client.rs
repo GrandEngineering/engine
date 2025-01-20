@@ -1,6 +1,9 @@
+use bincode::deserialize;
 use enginelib::api::EngineAPI;
 use enginelib::plugin::LibraryManager;
 use enginelib::task::Task;
+use enginelib::RawIdentier;
+use proto::engine_client;
 //use enginelib::EventHandler;
 use enginelib::Registry;
 use libloading::Library;
@@ -15,25 +18,15 @@ pub mod proto {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let url = "http://[::1]:50051";
+    let mut client = engine_client::EngineClient::connect(url).await?;
 
-    let mut api = EngineAPI::default();
-    let mut lib_manager = LibraryManager::default();
-    lib_manager.register_module("target/debug/libengine_core.so", &mut api);
-    //Why rust?
-    std::mem::forget(lib_manager);
-    // let mut client = EngineClient::connect(url).await?;
-    let req = proto::TaskRequest {
-        task_id: "namespace:fib".to_string().encode_to_vec(),
-    };
+    let req = proto::Empty {};
     let request = tonic::Request::new(req);
-    // let res = client.aquire_task(request).await?;
-    // let data = res.get_ref();
-    let mut tsk: Box<dyn Task> = api
-        .task_registry
-        .get(&("namespace".to_string(), "fib".to_string()))
-        .unwrap();
-    tsk.run_cpu();
-    println!("Mystery: {:?}", &tsk);
-
+    let response = client.aquire_task_reg(request).await?;
+    let vec = response.get_ref().tasks.clone();
+    let tasks: Vec<RawIdentier> = deserialize(&vec).unwrap();
+    tasks.iter().for_each(|task| {
+        println!("Task: {:?}", task);
+    });
     Ok(())
 }
