@@ -26,6 +26,7 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
+        //TODO: change to serde for human readable output
         let mut tasks: Vec<RawIdentier> = Vec::new();
         for (k, v) in &self.EngineAPI.task_registry.tasks {
             let js: Vec<String> = vec![k.0.clone(), k.1.clone()];
