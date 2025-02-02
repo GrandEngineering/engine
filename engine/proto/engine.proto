@@ -10,7 +10,7 @@ service auth {}
 message empty {}
 
 message TaskRegistry {
-  bytes tasks = 1; // namespace:task
+  repeated string tasks = 1; // namespace:task
 }
 
 message TaskRequest {
