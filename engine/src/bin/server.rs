@@ -3,6 +3,7 @@ use enginelib::{
     api::EngineAPI,
     events::{self, Events, ID},
     plugin::LibraryManager,
+    task::{TaskQueue, TaskQueueStorage},
     Identifier, RawIdentier, Registry, StartEvent,
 };
 use proto::engine_server::{Engine, EngineServer};
@@ -35,6 +36,7 @@ impl Engine for EngineService {
         let response = proto::TaskRegistry { tasks };
         Ok(tonic::Response::new(response))
     }
+
     async fn aquire_task(
         &self,
         request: tonic::Request<proto::TaskRequest>,
@@ -52,6 +54,12 @@ impl Engine for EngineService {
         };
         Ok(tonic::Response::new(response))
     }
+    async fn create_task(
+        &self,
+        request: tonic::Request<proto::Task>,
+    ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
+        Err(tonic::Status::aborted("Error"))
+    }
 }
 
 #[tokio::main]
@@ -61,9 +69,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut lib_manager = LibraryManager::default();
     lib_manager.load_library("target/debug/libengine_core.so", &mut api);
     StartEvent!(lib_manager, api);
-
     let addr = "[::1]:50051".parse().unwrap();
     let db: sled::Db = sled::open("engine_db")?;
+    let task_queue = TaskQueueStorage::default();
+    let te = bincode::serialize(&task_queue).unwrap();
+    db.insert("tasks", te)?;
     let engine = EngineService {
         EngineAPI: api,
         libs: lib_manager,

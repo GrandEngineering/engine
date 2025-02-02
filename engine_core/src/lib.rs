@@ -7,6 +7,7 @@ use enginelib::events;
 use enginelib::plugin::LibraryMetadata;
 use enginelib::task::Task;
 use enginelib::BuildEventHandler;
+use enginelib::Identifier;
 use enginelib::Registry;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -16,6 +17,9 @@ pub struct FibTask {
     pub result: u64,
 }
 impl Task for FibTask {
+    fn get_id(&self) -> Identifier {
+        ("engine_core".to_string(), "fib".to_string())
+    }
     fn clone_box(&self) -> Box<dyn Task> {
         Box::new(self.clone())
     }
@@ -29,10 +33,10 @@ impl Task for FibTask {
         }
         self.result = a;
     }
-    fn from_bytes(bytes: &[u8]) -> Self {
+    fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task> {
         let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
         let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
-        Self { iter, result }
+        Box::new(FibTask { iter, result })
     }
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(16);

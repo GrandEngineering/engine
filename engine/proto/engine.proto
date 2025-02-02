@@ -2,6 +2,7 @@ syntax = "proto3";
 package engine;
 service engine {
   rpc AquireTask(TaskRequest) returns (Task);
+  rpc CreateTask(Task) returns (Task);
   rpc AquireTaskReg(empty) returns (TaskRegistry);
   // rpc PublishTask(CompletedTask) returns (TaskStatus);
 }
