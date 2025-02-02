@@ -5,8 +5,9 @@ use crate::{
     task::{Task, TaskQueue},
     Identifier, Registry,
 };
+pub use bincode::deserialize;
+pub use bincode::serialize;
 use std::{collections::HashMap, sync::Arc};
-
 pub struct EngineAPI {
     pub task_queue: TaskQueue,
     pub task_registry: EngineTaskRegistry,
