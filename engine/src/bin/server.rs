@@ -45,13 +45,21 @@ impl Engine for EngineService {
         // Todo: check for wrong input to not cause a Panic out of bounds.
         let input = request.get_ref();
         println!("Got a request {:?}", input);
-        let task_id = String::from_utf8(input.task_id.clone()).unwrap();
+        let task_id = input.task_id.clone();
 
         let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
         let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
         println!("namespace:task {}:{}", &namespace, &task_name);
+        let tsx = self
+            .EngineAPI
+            .read()
+            .await
+            .task_registry
+            .get(&(namespace.to_string(), task_name.to_string()))
+            .unwrap();
         let response = proto::Task {
-            ..Default::default()
+            task_id: input.task_id.clone(),
+            task_payload: tsx.to_bytes(),
         };
         Ok(tonic::Response::new(response))
     }
@@ -60,7 +68,7 @@ impl Engine for EngineService {
         request: tonic::Request<proto::Task>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let task = request.get_ref();
-        let task_id = String::from_utf8(task.task_id.clone()).unwrap();
+        let task_id = task.task_id.clone();
         let id: Identifier = (
             task_id.split(":").collect::<Vec<&str>>()[0].to_string(),
             task_id.split(":").collect::<Vec<&str>>()[1].to_string(),

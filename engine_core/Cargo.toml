@@ -8,6 +8,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 [dependencies]
 enginelib = { path = "../enginelib" }
+serde = { version = "1.0.217", features = ["derive"] }
 [profile.release]
 # Optimize for Wasm binary size
 opt-level = "z"

@@ -1,4 +1,5 @@
 use enginelib::api::EngineAPI;
+use enginelib::api::{deserialize, serialize};
 use enginelib::event::info;
 use enginelib::event::Event;
 use enginelib::event::EventCTX;
@@ -9,9 +10,11 @@ use enginelib::task::Task;
 use enginelib::BuildEventHandler;
 use enginelib::Identifier;
 use enginelib::Registry;
+use serde::Deserialize;
+use serde::Serialize;
 use std::fmt::Debug;
 use std::sync::Arc;
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FibTask {
     pub iter: u64,
     pub result: u64,
@@ -39,9 +42,7 @@ impl Task for FibTask {
         Box::new(FibTask { iter, result })
     }
     fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(16);
-        bytes.extend_from_slice(&self.iter.to_le_bytes());
-        bytes.extend_from_slice(&self.result.to_le_bytes());
+        let bytes = enginelib::api::serialize(self).unwrap();
         bytes
     }
 }
