@@ -2,12 +2,13 @@ use tracing::{debug, Level};
 
 use crate::{
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},
-    task::Task,
+    task::{Task, TaskQueue},
     Identifier, Registry,
 };
 use std::{collections::HashMap, sync::Arc};
 
 pub struct EngineAPI {
+    pub task_queue: TaskQueue,
     pub task_registry: EngineTaskRegistry,
     pub event_bus: EventBus,
 }
@@ -22,6 +23,7 @@ impl Default for EngineAPI {
             .init();
 
         Self {
+            task_queue: TaskQueue::default(),
             task_registry: EngineTaskRegistry::default(),
             event_bus: EventBus {
                 event_registry: EngineEventRegistry {
