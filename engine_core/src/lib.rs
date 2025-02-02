@@ -37,13 +37,11 @@ impl Task for FibTask {
         self.result = a;
     }
     fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task> {
-        let iter = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
-        let result = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
-        Box::new(FibTask { iter, result })
+        let task: FibTask = deserialize(bytes).unwrap();
+        Box::new(task)
     }
     fn to_bytes(&self) -> Vec<u8> {
-        let bytes = enginelib::api::serialize(self).unwrap();
-        bytes
+        enginelib::api::serialize(self).unwrap()
     }
 }
 #[no_mangle]
