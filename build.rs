@@ -1,13 +1,13 @@
 // build.rs
 
-use vergen_git2::{BuildBuilder, CargoBuilder, Emitter, Git2Builder, RustcBuilder};
+use vergen_gix::{BuildBuilder, CargoBuilder, Emitter, GixBuilder, RustcBuilder};
 
 fn main() {
     // NOTE: This will output everything, and requires all features enabled.
     // NOTE: See the specific builder documentation for configuration options.
     let build = BuildBuilder::all_build().unwrap();
     let cargo = CargoBuilder::all_cargo().unwrap();
-    let git = Git2Builder::all_git().unwrap();
+    let git = GixBuilder::all_git().unwrap();
     let rustc = RustcBuilder::all_rustc().unwrap();
 
     Emitter::default()
