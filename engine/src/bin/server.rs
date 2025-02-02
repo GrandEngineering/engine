@@ -3,11 +3,12 @@ use enginelib::{
     api::EngineAPI,
     events::{self, Events, ID},
     plugin::LibraryManager,
-    task::{TaskQueue, TaskQueueStorage},
+    task::{Task, TaskQueue, TaskQueueStorage},
     Identifier, RawIdentier, Registry, StartEvent,
 };
 use proto::engine_server::{Engine, EngineServer};
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tonic::transport::Server;
 
 mod proto {
@@ -17,7 +18,7 @@ mod proto {
 }
 #[allow(non_snake_case)]
 struct EngineService {
-    pub EngineAPI: EngineAPI,
+    pub EngineAPI: Arc<RwLock<EngineAPI>>,
     pub libs: LibraryManager,
     pub db: sled::Db,
 }
@@ -28,7 +29,7 @@ impl Engine for EngineService {
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
         let mut tasks: Vec<RawIdentier> = Vec::new();
-        for (k, v) in &self.EngineAPI.task_registry.tasks {
+        for (k, v) in &self.EngineAPI.read().await.task_registry.tasks {
             let js: Vec<String> = vec![k.0.clone(), k.1.clone()];
             let jstr = js.join(":");
             tasks.push(jstr);
@@ -58,6 +59,15 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Task>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
+        let task = request.get_ref();
+        let task_id = String::from_utf8(task.task_id.clone()).unwrap();
+        let id: Identifier = (
+            task_id.split(":").collect::<Vec<&str>>()[0].to_string(),
+            task_id.split(":").collect::<Vec<&str>>()[1].to_string(),
+        );
+        let tsk_inst = self.EngineAPI.read().await.task_registry.get(&id).unwrap();
+        let tsk: Box<dyn Task> = tsk_inst.from_bytes(&task.task_payload);
+        self.EngineAPI.write().await.task_queue.tasks.push(tsk);
         Err(tonic::Status::aborted("Error"))
     }
 }
@@ -75,7 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let te = bincode::serialize(&task_queue).unwrap();
     db.insert("tasks", te)?;
     let engine = EngineService {
-        EngineAPI: api,
+        EngineAPI: Arc::new(RwLock::new(api)),
         libs: lib_manager,
         db,
     };

@@ -24,9 +24,5 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let request = tonic::Request::new(req);
     let response = client.aquire_task_reg(request).await?;
     let vec = response.get_ref().tasks.clone();
-    let tasks: Vec<RawIdentier> = deserialize(&vec).unwrap();
-    tasks.iter().for_each(|task| {
-        println!("Task: {:?}", task);
-    });
     Ok(())
 }
