@@ -1,6 +1,7 @@
 use crate::api::EngineAPI;
 use libloading::{Library, Symbol};
 use oxifs::OxiFS;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
@@ -10,7 +11,7 @@ pub struct LibraryInstance {
     dynamicLibrary: Arc<ManuallyDrop<Library>>,
     pub metadata: Arc<LibraryMetadata>,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LibraryMetadata {
     pub mod_id: String,
     pub mod_author: String,
@@ -25,7 +26,7 @@ pub struct LibraryMetadata {
     pub mod_display_url: String,
     pub mod_issue_tracker: String,
 }
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LibraryDependency {
     pub mod_git_repo: String,
     pub mod_git_commit: String,
