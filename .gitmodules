@@ -1,6 +1,6 @@
-; [submodule "enginelib"]
-; 	path = enginelib
-; 	url = git@github.com:GrandEngineering/enginelib.git
+[submodule "enginelib"]
+	path = enginelib
+	url = git@github.com:GrandEngineering/enginelib.git
 ; [submodule "auth"]
 ;     path = auth
 ;     url = git@github.com:IGN-Styly/authrelay.git
