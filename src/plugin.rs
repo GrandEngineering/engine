@@ -21,9 +21,14 @@ pub struct LibraryMetadata {
     pub mod_description: String,
     pub mod_license: String,
     pub mod_credits: String,
-    pub mod_dependencies: Vec<String>,
+    pub mod_dependencies: Vec<LibraryDependency>,
     pub mod_display_url: String,
     pub mod_issue_tracker: String,
+}
+#[derive(Debug, Clone, Default)]
+pub struct LibraryDependency {
+    pub mod_git_repo: String,
+    pub mod_git_commit: String,
 }
 impl Default for LibraryMetadata {
     fn default() -> Self {
