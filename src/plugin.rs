@@ -30,6 +30,7 @@ pub struct LibraryMetadata {
 pub struct LibraryDependency {
     pub mod_git_repo: String,
     pub mod_git_commit: String,
+    pub mod_id: String,
 }
 impl Default for LibraryMetadata {
     fn default() -> Self {
