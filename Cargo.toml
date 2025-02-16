@@ -3,7 +3,7 @@ name = "enginelib"
 version = "0.1.0"
 edition = "2021"
 description = "A library for the GE engine allowing for modding and removing boilerplate."
-license = "GE License"
+license-file = "LICENSE.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
