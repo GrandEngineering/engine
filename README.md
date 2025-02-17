@@ -1,6 +1,9 @@
 # GE Engine
 A blazingly fast distrubted computing project.
 
+## Modding
+GE Engine provides an API with an event system and tasks allowing for great moddability. To create a mod dev env use rustforge our own tool that manages it all for you.
+
 ## License & Use
 [GE](https://github.com/GrandEngineering) reserve all rights and [GE](https://github.com/GrandEngineering) also reserves the rights to restrain individuals abilities to use this software and its code. The points below outline what you can, cannot and must do when dealing with the
 contents of this repository and its submodules. Licenses for commercial use can only be granted by [GE](https://github.com/GrandEngineering).
