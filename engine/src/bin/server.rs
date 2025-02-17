@@ -85,9 +85,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
     Events::init(&mut api);
     let mut lib_manager = LibraryManager::default();
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "dev")]
     lib_manager.load_library("target/debug/libengine_core.so", &mut api);
-    #[cfg(not(debug_assertions))]
+    #[cfg(not(feature = "dev"))]
     lib_manager.load_modules(&mut api);
     StartEvent!(lib_manager, api);
     let addr = "[::1]:50051".parse().unwrap();
