@@ -90,11 +90,13 @@ impl LibraryManager {
     pub fn load_module(&mut self, path: &str, api: &mut EngineAPI) {
         info!("Loading module {}", path);
         let fs = OxiFS::new(path);
+
         let tmp_path = fs.tempdir.path();
         #[cfg(unix)]
         self.load_library(tmp_path.join("mod.so").to_str().unwrap(), api);
         #[cfg(windows)]
         self.load_library(tmp_path.join("mod.dll").to_str().unwrap(), api);
+        std::mem::forget(fs);
     }
     pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) {
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
