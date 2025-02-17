@@ -2,9 +2,9 @@ use crate::api::EngineAPI;
 use libloading::{Library, Symbol};
 use oxifs::OxiFS;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
+use std::{collections::HashMap, fs};
 use tracing::{debug, info};
 #[derive(Clone, Debug)]
 pub struct LibraryInstance {
@@ -60,7 +60,35 @@ impl LibraryManager {
         drop(api);
         drop(self);
     }
+    pub fn load_modules(&mut self, api: &mut EngineAPI) {
+        //get all files in ./mods
+        let dir_path = "./mods"; // Target directory
+        let mut files: Vec<String> = Vec::new();
+
+        if let Ok(entries) = fs::read_dir(dir_path) {
+            for entry in entries.filter_map(Result::ok) {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(extension) = path.extension() {
+                        if extension == "tar" {
+                            if let Some(stem) = path.file_stem() {
+                                if stem.to_string_lossy().ends_with(".rustforge") {
+                                    files.push(path.display().to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            eprintln!("Error reading directory: {}", dir_path);
+        }
+        for file in files {
+            self.load_module(&file, api);
+        }
+    }
     pub fn load_module(&mut self, path: &str, api: &mut EngineAPI) {
+        info!("Loading module {}", path);
         let fs = OxiFS::new(path);
         let tmp_path = fs.tempdir.path();
         #[cfg(unix)]
