@@ -11,9 +11,14 @@ pub use tracing::{debug, error, event, info, warn};
 
 pub trait EventCTX<C: Event>: EventHandler {
     fn get_event<T: Event + Sized>(event: &mut dyn Event) -> &mut T {
+        debug!("Aquiring Event");
         event.as_any_mut().downcast_mut::<T>().unwrap()
     }
     fn handle(&self, event: &mut dyn Event) {
+        let namespace = event.get_id().0;
+        let id = event.get_id().1;
+        let msg = format!("Handling Event: {}:{}", namespace, id);
+        debug!(msg);
         let event: &mut C = <Self as EventCTX<C>>::get_event::<C>(event);
         self.handleCTX(event);
     }

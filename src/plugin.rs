@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
 use std::{collections::HashMap, fs};
+use tracing::field::debug;
 use tracing::{debug, info};
 #[derive(Clone, Debug)]
 pub struct LibraryInstance {
@@ -99,6 +100,7 @@ impl LibraryManager {
         std::mem::forget(fs);
     }
     pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) {
+        debug!("Loading library {}", path);
         let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
         let (lib, metadata): (Library, LibraryMetadata) = unsafe {
             let library = Library::new(path).unwrap();
