@@ -41,6 +41,7 @@ impl TaskQueue {
         TaskQueue { tasks }
     }
 }
+
 pub trait Task: Debug + Sync + Send {
     fn get_id(&self) -> Identifier;
     fn clone_box(&self) -> Box<dyn Task>;
