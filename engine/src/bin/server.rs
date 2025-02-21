@@ -1,6 +1,7 @@
 use bincode::serialize;
 use enginelib::{
     api::EngineAPI,
+    event::debug,
     events::{self, Events, ID},
     plugin::LibraryManager,
     task::{Task, TaskQueue, TaskQueueStorage},
@@ -86,7 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Events::init(&mut api);
     let mut lib_manager = LibraryManager::default();
     #[cfg(feature = "dev")]
-    lib_manager.load_library("./mods/mod1.so", &mut api);
+    lib_manager.load_library("./target/release/libengine_core.so", &mut api);
     #[cfg(not(feature = "dev"))]
     lib_manager.load_modules(&mut api);
     StartEvent!(lib_manager, api);
