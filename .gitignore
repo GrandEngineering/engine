@@ -12,6 +12,5 @@ enginelib/Cargo.lock
 # Rust fmt backups
 */*/*.rs.bk
 target
-**/Cargo.lock
 */Cargo.lock
 engine_db
