@@ -401,8 +401,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 
 [[package]]
+name = "engine"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "directories",
+ "enginelib",
+ "libloading",
+ "prost",
+ "serde",
+ "sled",
+ "tokio",
+ "toml",
+ "tonic",
+ "tonic-build",
+ "tonic-reflection",
+]
+
+[[package]]
 name = "enginelib"
 version = "0.1.7"
+source = "git+https://github.com/GrandEngineering/enginelib.git#7772a1fc998950bbe5e25853c66c81904c3690ac"
 dependencies = [
  "bincode",
  "directories",
@@ -545,24 +564,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c"
 dependencies = [
  "byteorder",
-]
-
-[[package]]
-name = "geengine"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "directories",
- "enginelib",
- "libloading",
- "prost",
- "serde",
- "sled",
- "tokio",
- "toml",
- "tonic",
- "tonic-build",
- "tonic-reflection",
 ]
 
 [[package]]
