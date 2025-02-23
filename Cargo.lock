@@ -421,7 +421,7 @@ dependencies = [
 [[package]]
 name = "enginelib"
 version = "0.1.7"
-source = "git+https://github.com/GrandEngineering/enginelib.git#33afba827b5600a3276dfb4cef98c2e6796d88fa"
+source = "git+https://github.com/GrandEngineering/enginelib.git#4f70307ecb15b6d657f96b378e3c5ab8061f39f6"
 dependencies = [
  "bincode",
  "directories",
