@@ -7,19 +7,19 @@ use std::process;
 use std::sync::Arc;
 pub use tracing::{debug, error, event, info, warn};
 // The Actual Fuck
-// this fucking piece of god given code saves so much time
+// this fucking piece of god given code saves so much time and wastes soo much time
 
 pub trait EventCTX<C: Event>: EventHandler {
     fn get_event<T: Event + Sized>(event: &mut dyn Event) -> &mut T {
         debug!("Aquiring Event");
-        event.as_any_mut().downcast_mut::<T>().unwrap()
+        unsafe { &mut *(event as *mut dyn Event as *mut T) }
     }
     fn handle(&self, event: &mut dyn Event) {
         let namespace = event.get_id().0;
         let id = event.get_id().1;
         let msg = format!("Handling Event: {}:{}", namespace, id);
         debug!(msg);
-        let event: &mut C = <Self as EventCTX<C>>::get_event::<C>(event);
+        let event: &mut C = unsafe { &mut *(event as *mut dyn Event as *mut C) };
         self.handleCTX(event);
     }
     #[allow(non_snake_case)]
@@ -124,11 +124,7 @@ impl EventBus {
 
         if let Some(handlers) = handlers {
             for handler in handlers {
-                if let Some(event) = event.as_any_mut().downcast_mut::<T>() {
-                    handler.handle(event)
-                } else {
-                    error!("Failed to downcast event during handling");
-                }
+                handler.handle(event)
             }
         } else {
             debug!("No EventHandlers subscribed to {:?}:{:?}", id.0, id.1)
