@@ -6,7 +6,7 @@ use std::mem::ManuallyDrop;
 use std::sync::Arc;
 use std::{collections::HashMap, fs};
 use tracing::field::debug;
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 #[derive(Clone, Debug)]
 pub struct LibraryInstance {
     dynamicLibrary: Arc<ManuallyDrop<Library>>,
@@ -94,28 +94,53 @@ impl LibraryManager {
 
         let tmp_path = fs.tempdir.path();
         #[cfg(unix)]
-        self.load_library(tmp_path.join("mod.so").to_str().unwrap(), api);
+        let library_path = tmp_path.join("mod.so");
         #[cfg(windows)]
-        self.load_library(tmp_path.join("mod.dll").to_str().unwrap(), api);
+        let library_path = tmp_path.join("mod.so");
+        if let Some(lib_path_str) = library_path.to_str() {
+            self.load_library(lib_path_str, api);
+        } else {
+            info!("Invalid library path for module: {}", path);
+        }
         std::mem::forget(fs);
     }
+
     pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) {
         debug!("Loading library {}", path);
-        let run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>;
-        let (lib, metadata): (Library, LibraryMetadata) = unsafe {
-            let library = Library::new(path).unwrap();
-            let metadataFN: Symbol<unsafe extern "Rust" fn() -> LibraryMetadata> =
-                library.get(b"metadata").unwrap();
-            let metadata: LibraryMetadata = metadataFN();
-            (library, metadata)
+        let (lib, metadata): (Library, LibraryMetadata) = match unsafe {
+            Library::new(path)
+                .map_err(|e| error!("Failed to load library: {e}"))
+                .and_then(|library| {
+                    let metadataFN: Symbol<unsafe extern "Rust" fn() -> LibraryMetadata> = library
+                        .get(b"metadata")
+                        .map_err(|e| error!("Failed to load metadata: {e}"))?;
+                    let metadata: LibraryMetadata = metadataFN();
+                    Ok((library, metadata))
+                })
+        } {
+            Ok(result) => result,
+            Err(err) => {
+                info!("Failed to load module at {:#?}: {:#?}", path, err);
+                return;
+            }
         };
         if metadata.api_version == crate::GIT_VERSION
             && metadata.rustc_version == crate::RUSTC_VERSION
         {
-            unsafe {
-                run = lib.get(b"run").unwrap();
-                run(api);
-            }
+            let res = unsafe {
+                lib.get(b"run")
+                    .map_err(|e| {
+                        error!("Failed to get run symbol: {:#?}", e);
+                        false
+                    })
+                    .map(
+                        |run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>| {
+                            run(api);
+                            true
+                        },
+                    )
+            };
+            if res {}
             self.libraries.insert(
                 metadata.mod_id.clone(),
                 LibraryInstance {

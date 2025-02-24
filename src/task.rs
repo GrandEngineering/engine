@@ -27,15 +27,15 @@ impl TaskQueue {
         let tasks = storage
             .tasks
             .iter()
-            .map(|task_bytes| {
-                let x: Box<dyn Task> = api.task_registry.get(&task_bytes.0).unwrap_or_else(|| {
-                    error!("Failed to convert TaskBytes into Solid Task");
-                    panic!("Failed to convert TaskBytes into Solid Task")
-                });
-                // Assuming you have a way to get the task type and deserialize it
-                // This is a placeholder and should be replaced with actual deserialization logic
-                let task: Box<dyn Task> = x.from_bytes(&task_bytes.1);
-                task
+            .filter_map(|task_bytes| match api.task_registry.get(&task_bytes.0) {
+                Some(x) => Some(x.from_bytes(&task_bytes.1)),
+                None => {
+                    error!(
+                        "Failed to convert TaskBytes into Solid Task for {:?}",
+                        task_bytes.0
+                    );
+                    None
+                }
             })
             .collect();
         TaskQueue { tasks }
