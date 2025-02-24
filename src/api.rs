@@ -15,14 +15,6 @@ pub struct EngineAPI {
 }
 impl Default for EngineAPI {
     fn default() -> Self {
-        //Init Logger Here
-        tracing_subscriber::FmtSubscriber::builder()
-            // all spans/events with a level higher than TRACE (e.g, debug, info, warn, etc.)
-            // will be written to stdout.
-            .with_max_level(Level::INFO)
-            // builds the subscriber.
-            .init();
-
         Self {
             task_queue: TaskQueue::default(),
             task_registry: EngineTaskRegistry::default(),
