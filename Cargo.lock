@@ -420,8 +420,8 @@ dependencies = [
 
 [[package]]
 name = "enginelib"
-version = "0.1.7"
-source = "git+https://github.com/GrandEngineering/enginelib.git#1d3c0606393c57cacf59678093a3354f614d1434"
+version = "0.2.0"
+source = "git+https://github.com/GrandEngineering/enginelib.git#03572fdedf4ea770cddd8c644a07cede5ed483c8"
 dependencies = [
  "bincode",
  "directories",
