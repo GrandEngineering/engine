@@ -58,38 +58,49 @@ pub struct LibraryManager {
 
 impl LibraryManager {
     pub fn drop(self, api: EngineAPI) {
+        debug!("Dropping LibraryManager and EngineAPI");
         drop(api);
         drop(self);
     }
+
     pub fn load_modules(&mut self, api: &mut EngineAPI) {
-        //get all files in ./mods
-        let dir_path = "./mods"; // Target directory
+        let dir_path = "./mods";
         let mut files: Vec<String> = Vec::new();
 
-        if let Ok(entries) = fs::read_dir(dir_path) {
-            for entry in entries.filter_map(Result::ok) {
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(extension) = path.extension() {
-                        if extension == "tar" {
-                            if let Some(stem) = path.file_stem() {
-                                if stem.to_string_lossy().ends_with(".rustforge") {
-                                    files.push(path.display().to_string());
+        info!("Scanning for modules in directory: {}", dir_path);
+
+        match fs::read_dir(dir_path) {
+            Ok(entries) => {
+                for entry in entries.filter_map(Result::ok) {
+                    let path = entry.path();
+                    if path.is_file() {
+                        if let Some(extension) = path.extension() {
+                            if extension == "tar" {
+                                if let Some(stem) = path.file_stem() {
+                                    if stem.to_string_lossy().ends_with(".rustforge") {
+                                        debug!("Found valid module file: {}", path.display());
+                                        files.push(path.display().to_string());
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        } else {
-            eprintln!("Error reading directory: {}", dir_path);
+            Err(e) => {
+                error!("Failed to read modules directory {}: {}", dir_path, e);
+                return;
+            }
         }
+
+        info!("Found {} module(s) to load", files.len());
         for file in files {
             self.load_module(&file, api);
         }
     }
+
     pub fn load_module(&mut self, path: &str, api: &mut EngineAPI) {
-        info!("Loading module {}", path);
+        info!("Loading module from path: {}", path);
         let fs = OxiFS::new(path);
 
         let tmp_path = fs.tempdir.path();
@@ -97,58 +108,65 @@ impl LibraryManager {
         let library_path = tmp_path.join("mod.so");
         #[cfg(windows)]
         let library_path = tmp_path.join("mod.so");
+
         if let Some(lib_path_str) = library_path.to_str() {
-            self.load_library(lib_path_str, api);
+            debug!("Extracted library path: {}", lib_path_str);
+            if let Err(e) = self.load_library(lib_path_str, api) {
+                error!("Failed to load library {}: {}", lib_path_str, e);
+            }
         } else {
-            info!("Invalid library path for module: {}", path);
+            error!("Invalid library path for module: {}", path);
         }
         std::mem::forget(fs);
     }
 
     pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) -> Result<(), String> {
-        debug!("Loading library {}", path);
-        let (lib, metadata): (Library, LibraryMetadata) = match unsafe {
-            Library::new(path)
-                .map_err(|e| error!("Failed to load library: {e}"))
+        debug!("Attempting to load library: {}", path);
+
+        let (lib, metadata): (Library, LibraryMetadata) = unsafe {
+            match Library::new(path)
+                .map_err(|e| format!("Failed to load library: {}", e))
                 .and_then(|library| {
-                    let metadataFN: Symbol<unsafe extern "Rust" fn() -> LibraryMetadata> = library
+                    let metadata_fn: Symbol<unsafe extern "Rust" fn() -> LibraryMetadata> = library
                         .get(b"metadata")
-                        .map_err(|e| error!("Failed to load metadata: {e}"))?;
-                    let metadata: LibraryMetadata = metadataFN();
+                        .map_err(|e| format!("Failed to load metadata: {}", e))?;
+                    let metadata: LibraryMetadata = metadata_fn();
                     Ok((library, metadata))
-                })
-        } {
-            Ok(result) => result,
-            Err(err) => {
-                info!("Failed to load module at {:#?}: {:#?}", path, err);
-                return Err("Failed to load module".to_string());
+                }) {
+                Ok(result) => result,
+                Err(err) => {
+                    error!("Failed to load module at {}: {}", path, err);
+                    return Err(err);
+                }
             }
         };
+
+        // Version compatibility check
         if metadata.api_version != crate::GIT_VERSION
-            && metadata.rustc_version != crate::RUSTC_VERSION
+            || metadata.rustc_version != crate::RUSTC_VERSION
         {
             let err = format!(
-                            "Module version mismatch - Lib API: {}, Engine API: {}, Lib Rustc: {}, Engine Rustc: {}",
-                            metadata.api_version,
-                            crate::GIT_VERSION,
-                            metadata.rustc_version,
-                            crate::RUSTC_VERSION
-                        );
+                "Version mismatch - Module API: {}, Engine API: {}, Module Rustc: {}, Engine Rustc: {}",
+                metadata.api_version,
+                crate::GIT_VERSION,
+                metadata.rustc_version,
+                crate::RUSTC_VERSION
+            );
             error!("{}", err);
             return Err(err);
-        };
+        }
 
-        let res = unsafe {
+        // Execute module's run function
+        if let Err(e) = unsafe {
             lib.get(b"run")
-                .map_err(|e| {
-                    error!("Failed to get run symbol: {:#?}", e);
-                })
-                .map(
-                    |run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>| {
-                        run(api);
-                    },
-                )
-        };
+                .map_err(|e| format!("Failed to get run symbol: {}", e))
+                .map(|run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>| run(api))
+        } {
+            error!("Failed to execute module's run function: {}", e);
+            return Err(e);
+        }
+
+        // Store the loaded library
         self.libraries.insert(
             metadata.mod_id.clone(),
             LibraryInstance {
@@ -156,9 +174,10 @@ impl LibraryManager {
                 metadata: Arc::new(metadata.clone()),
             },
         );
-        debug!(
-            "Module {} Loaded, made by {}",
-            metadata.mod_name, metadata.mod_author
+
+        info!(
+            "Successfully loaded module '{}' (version {}) by {}",
+            metadata.mod_name, metadata.mod_version, metadata.mod_author
         );
         Ok(())
     }
