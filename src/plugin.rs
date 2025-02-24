@@ -105,7 +105,7 @@ impl LibraryManager {
         std::mem::forget(fs);
     }
 
-    pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) {
+    pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) -> Result<(), String> {
         debug!("Loading library {}", path);
         let (lib, metadata): (Library, LibraryMetadata) = match unsafe {
             Library::new(path)
@@ -121,42 +121,45 @@ impl LibraryManager {
             Ok(result) => result,
             Err(err) => {
                 info!("Failed to load module at {:#?}: {:#?}", path, err);
-                return;
+                return Err("Failed to load module".to_string());
             }
         };
-        if metadata.api_version == crate::GIT_VERSION
-            && metadata.rustc_version == crate::RUSTC_VERSION
+        if metadata.api_version != crate::GIT_VERSION
+            && metadata.rustc_version != crate::RUSTC_VERSION
         {
-            let res = unsafe {
-                lib.get(b"run")
-                    .map_err(|e| {
-                        error!("Failed to get run symbol: {:#?}", e);
-                        false
-                    })
-                    .map(
-                        |run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>| {
-                            run(api);
-                            true
-                        },
-                    )
-            };
-            if res {}
-            self.libraries.insert(
-                metadata.mod_id.clone(),
-                LibraryInstance {
-                    dynamicLibrary: Arc::new(ManuallyDrop::new(lib)),
-                    metadata: Arc::new(metadata.clone()),
-                },
-            );
-            debug!(
-                "Module {} Loaded, made by {}",
-                metadata.mod_name, metadata.mod_author
-            )
-        } else {
-            info!(
-                "Module {} was not loaded due to version mismatch, Lib API: {}, Engine API: {}, Lib Rustc: {}, Engine Rustc: {}",
-                metadata.mod_name, metadata.api_version, crate::GIT_VERSION, metadata.rustc_version, crate::RUSTC_VERSION
-            );
-        }
+            let err = format!(
+                            "Module version mismatch - Lib API: {}, Engine API: {}, Lib Rustc: {}, Engine Rustc: {}",
+                            metadata.api_version,
+                            crate::GIT_VERSION,
+                            metadata.rustc_version,
+                            crate::RUSTC_VERSION
+                        );
+            error!("{}", err);
+            return Err(err);
+        };
+
+        let res = unsafe {
+            lib.get(b"run")
+                .map_err(|e| {
+                    error!("Failed to get run symbol: {:#?}", e);
+                })
+                .map(
+                    |run: Symbol<unsafe extern "Rust" fn(reg: &mut EngineAPI)>| {
+                        run(api);
+                    },
+                )
+        };
+        self.libraries.insert(
+            metadata.mod_id.clone(),
+            LibraryInstance {
+                dynamicLibrary: Arc::new(ManuallyDrop::new(lib)),
+                metadata: Arc::new(metadata.clone()),
+            },
+        );
+        debug!(
+            "Module {} Loaded, made by {}",
+            metadata.mod_name, metadata.mod_author
+        );
+        Ok(())
     }
 }
