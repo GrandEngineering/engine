@@ -63,7 +63,7 @@ impl Registry<dyn Task> for EngineTaskRegistry {
     fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier) {
         // Insert the task into the hashmap with (mod_id, identifier) as the key
         debug!(
-            "Inserting task {:?}:{:?} into registry",
+            "TaskRegistry: Registering task {}.{}",
             identifier.0, identifier.1
         );
         self.tasks.insert(identifier, task);

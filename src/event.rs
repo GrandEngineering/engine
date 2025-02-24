@@ -17,8 +17,7 @@ pub trait EventCTX<C: Event>: EventHandler {
     fn handle(&self, event: &mut dyn Event) {
         let namespace = event.get_id().0;
         let id = event.get_id().1;
-        let msg = format!("Handling Event: {}:{}", namespace, id);
-        debug!(msg);
+        debug!("EventBus: Handling event {}.{}", namespace, id);
         let event: &mut C = unsafe { &mut *(event as *mut dyn Event as *mut C) };
         self.handleCTX(event);
     }
@@ -65,8 +64,8 @@ impl EngineEventHandlerRegistry {
         let handlers = self.event_handlers.entry(identifier.clone()).or_default();
         handlers.push(handler);
         debug!(
-            "Event Handler registered for event ID: {:?}",
-            identifier.clone()
+            "EventBus: Registered handler for event {}.{}",
+            identifier.0, identifier.1
         );
     }
 }
@@ -78,7 +77,10 @@ impl Clone for Box<dyn Event> {
 impl Registry<dyn Event> for EngineEventRegistry {
     fn register(&mut self, registree: Arc<dyn Event>, identifier: Identifier) {
         self.events.insert(identifier.clone(), registree);
-        debug!("Event registered with ID: {:?}", identifier.clone());
+        debug!(
+            "EventBus: Registered event {}.{}",
+            identifier.0, identifier.1
+        );
     }
 
     fn get(&self, identifier: &Identifier) -> Option<Box<dyn Event>> {
@@ -118,7 +120,7 @@ impl Event for OnStartEvent {
 
 impl EventBus {
     pub fn handle<T: Event>(&self, id: Identifier, event: &mut T) {
-        debug!("Handling events: {:?}", &event.get_id());
+        debug!("EventBus: Processing event {}.{}", id.0, id.1);
         let handlers: Option<&Vec<Arc<dyn EventHandler>>> =
             self.event_handler_registry.event_handlers.get(&id);
 
@@ -127,7 +129,10 @@ impl EventBus {
                 handler.handle(event)
             }
         } else {
-            debug!("No EventHandlers subscribed to {:?}:{:?}", id.0, id.1)
+            debug!(
+                "EventBus: No event handlers subscribed for event {}.{}",
+                id.0, id.1
+            );
         }
     }
 }

@@ -31,8 +31,8 @@ impl TaskQueue {
                 Some(x) => Some(x.from_bytes(&task_bytes.1)),
                 None => {
                     error!(
-                        "Failed to convert TaskBytes into Solid Task for {:?}",
-                        task_bytes.0
+                        "TaskQueue: Failed to deserialize task {}.{} - invalid data",
+                        task_bytes.0 .0, task_bytes.0 .1
                     );
                     None
                 }
@@ -47,12 +47,20 @@ pub trait Task: Debug + Sync + Send {
     fn clone_box(&self) -> Box<dyn Task>;
     #[instrument]
     fn run_hip(&mut self) {
-        warn!("HIP Runtime not available, falling back to CPU");
+        warn!(
+            "Task: HIP runtime not available for {}.{}, falling back to CPU",
+            self.get_id().0,
+            self.get_id().1
+        );
         self.run_cpu();
     }
     #[instrument]
     fn run_cpu(&mut self) {
-        error!("CPU run not Implemented");
+        error!(
+            "Task: CPU implementation missing for {}.{}",
+            self.get_id().0,
+            self.get_id().1
+        );
     }
     #[instrument]
     fn run(&mut self, run: Option<Runner>) {
