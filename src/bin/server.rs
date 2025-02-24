@@ -84,6 +84,7 @@ impl Engine for EngineService {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
+    EngineAPI::setup_logger();
     Events::init(&mut api);
     let mut lib_manager = LibraryManager::default();
     #[cfg(feature = "dev")]
