@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! register_event {
     ($api:expr,$name:ident,$default_state:expr) => {
-        use crate::Registry;
+        use $crate::Registry;
         let $name = ID("core", stringify!($name));
         $api.event_bus
             .event_registry

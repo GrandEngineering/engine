@@ -1,4 +1,4 @@
-use std::{any::Any, fmt::Debug, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
 
 use crate::api::EngineAPI;
 use crate::{Identifier, Registry};
@@ -70,6 +70,7 @@ pub trait Task: Debug + Sync + Send {
         }
     }
     fn to_bytes(&self) -> Vec<u8>;
+    #[allow(clippy::wrong_self_convention)]
     fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task>;
 }
 
