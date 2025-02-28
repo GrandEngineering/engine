@@ -1,8 +1,8 @@
 use enginelib::{
+    BuildEventHandler, Registry,
     api::EngineAPI,
     event::{Event, EventCTX, EventHandler},
     events::ID,
-    BuildEventHandler, Registry,
 };
 use std::sync::Arc;
 use tracing_test::traced_test;

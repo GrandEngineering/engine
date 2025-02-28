@@ -32,7 +32,7 @@ impl TaskQueue {
                 None => {
                     error!(
                         "TaskQueue: Failed to deserialize task {}.{} - invalid data",
-                        task_bytes.0 .0, task_bytes.0 .1
+                        task_bytes.0.0, task_bytes.0.1
                     );
                     None
                 }
