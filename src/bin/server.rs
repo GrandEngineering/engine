@@ -8,7 +8,7 @@ use enginelib::{
     task::{Task, TaskQueue, TaskQueueStorage},
 };
 use proto::engine_server::{Engine, EngineServer};
-use std::sync::Arc;
+use std::{env::consts::OS, sync::Arc};
 use tokio::sync::RwLock;
 use tonic::transport::Server;
 
@@ -25,6 +25,12 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn cgrpc(
+        &self,
+        request: tonic::Request<proto::Cgrpcmsg>,
+    ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
+        return Err(tonic::Status::internal("sucks"));
+    }
     async fn aquire_task_reg(
         &self,
         request: tonic::Request<proto::Empty>,

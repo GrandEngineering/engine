@@ -4,11 +4,17 @@ service engine {
   rpc AquireTask(TaskRequest) returns (Task);
   rpc CreateTask(Task) returns (Task);
   rpc AquireTaskReg(empty) returns (TaskRegistry);
+  rpc cgrpc(cgrpcmsg) returns (cgrpcmsg);
   // rpc PublishTask(CompletedTask) returns (TaskStatus);
 }
-service auth {}
 
 message empty {}
+
+message cgrpcmsg {
+  string handler_mod_id = 1;
+  string handler_id = 2;
+  bytes event_payload = 3;
+}
 
 message TaskRegistry {
   repeated string tasks = 1; // namespace:task
