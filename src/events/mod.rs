@@ -1,6 +1,6 @@
 use crate::Identifier;
 use crate::api::EngineAPI;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 pub mod cgrpc_event;
 pub mod start_event;
 
@@ -18,7 +18,9 @@ impl Events {
             crate::events::cgrpc_event::CgrpcEvent {
                 cancelled: false,
                 handler_id: ("".to_string(), "".to_string()),
-                id: cgrpc_event.clone()
+                id: cgrpc_event.clone(),
+                payload: Vec::new(),
+                output: Arc::new(RwLock::new(Vec::new()))
             }
         );
         //Register Events to the Default impl for less boilerplate

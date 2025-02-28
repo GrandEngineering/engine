@@ -1,4 +1,7 @@
-use std::any::Any;
+use std::{
+    any::Any,
+    sync::{Arc, RwLock},
+};
 
 use crate::{Identifier, api::EngineAPI, event::Event};
 
@@ -9,6 +12,8 @@ pub struct CgrpcEvent {
     pub cancelled: bool,
     pub id: Identifier,
     pub handler_id: Identifier,
+    pub payload: Vec<u8>,
+    pub output: Arc<RwLock<Vec<u8>>>,
 }
 #[macro_export]
 macro_rules! RegisterCgrpcEventHandler {
@@ -32,13 +37,20 @@ macro_rules! RegisterCgrpcEventHandler {
     };
 }
 impl Events {
-    pub fn CgrpcEvent(api: &mut EngineAPI, handler_id: Identifier) {
+    pub fn CgrpcEvent(
+        api: &mut EngineAPI,
+        handler_id: Identifier,
+        payload: Vec<u8>,
+        output: Arc<RwLock<Vec<u8>>>,
+    ) {
         api.event_bus.handle(
             ID("core", "cgrpc_event"),
             &mut CgrpcEvent {
                 cancelled: false,
                 id: ID("core", "cgrpc_event"),
                 handler_id,
+                payload,
+                output,
             },
         );
     }
