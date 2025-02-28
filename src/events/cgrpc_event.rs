@@ -28,7 +28,10 @@ macro_rules! RegisterCgrpcEventHandler {
         }
         impl EventCTX<CgrpcEvent> for $handler {
             fn handleCTX(&self, event: &mut CgrpcEvent) {
-                let id: (String, String) = (stringify!(handler_mod_id), stringify!(handler_id));
+                let id: (String, String) = (
+                    stringify!(handler_mod_id).to_string(),
+                    stringify!(handler_id).to_string(),
+                );
                 if (id == event.handler_id) {
                     $handler_fn(event)
                 }
