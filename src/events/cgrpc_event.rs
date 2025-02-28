@@ -12,8 +12,7 @@ pub struct CgrpcEvent {
 }
 #[macro_export]
 macro_rules! RegisterCgrpcEventHandler {
-    ($handler:ident,$handler_id:expr,$handler_fn:expr) => {
-        use enginelib::events::cgrpc_event::CgrpcEvent;
+    ($handler:ident,$handler_mod_id:ident,$handler_id:ident,$handler_fn:expr) => {
         pub struct $handler;
         impl EventHandler for $handler {
             fn handle(&self, event: &mut dyn Event) {
@@ -24,7 +23,10 @@ macro_rules! RegisterCgrpcEventHandler {
         }
         impl EventCTX<CgrpcEvent> for $handler {
             fn handleCTX(&self, event: &mut CgrpcEvent) {
-                $handler_fn(event)
+                let id: (String, String) = (stringify!(handler_mod_id), stringify!(handler_id));
+                if (id == event.handler_id) {
+                    $handler_fn(event)
+                }
             }
         }
     };

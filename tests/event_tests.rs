@@ -9,6 +9,12 @@ use tracing_test::traced_test;
 
 #[traced_test]
 #[test]
+fn id() {
+    assert!(ID("namespace", "id") == ID("namespace", "id"))
+}
+
+#[traced_test]
+#[test]
 fn test_event_registration_and_handling() {
     let mut api = EngineAPI::default();
 

@@ -11,6 +11,16 @@ pub fn ID(namespace: &str, id: &str) -> Identifier {
 
 impl Events {
     pub fn init(api: &mut EngineAPI) {
+        crate::register_event!(
+            api,
+            core,
+            cgrpc_event,
+            crate::events::cgrpc_event::CgrpcEvent {
+                cancelled: false,
+                handler_id: ("".to_string(), "".to_string()),
+                id: cgrpc_event.clone()
+            }
+        );
         //Register Events to the Default impl for less boilerplate
         crate::register_event!(
             api,
