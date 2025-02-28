@@ -1,11 +1,11 @@
 use bincode::serialize;
 use enginelib::{
+    Identifier, RawIdentier, Registry,
     api::EngineAPI,
     event::debug,
     events::{self, Events, ID},
     plugin::LibraryManager,
     task::{Task, TaskQueue, TaskQueueStorage},
-    Identifier, RawIdentier, Registry, StartEvent,
 };
 use proto::engine_server::{Engine, EngineServer};
 use std::sync::Arc;
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     lib_manager.load_library("./target/release/libengine_core.so", &mut api);
     #[cfg(not(feature = "dev"))]
     lib_manager.load_modules(&mut api);
-    StartEvent!(lib_manager, api);
+    Events::StartEvent(&mut api, &mut lib_manager);
     let addr = "[::1]:50051".parse().unwrap();
     let db: sled::Db = sled::open("engine_db")?;
     let task_queue = TaskQueueStorage::default();
