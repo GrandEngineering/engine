@@ -2,10 +2,10 @@
 macro_rules! register_event {
     ($api:expr,$mod_id:ident,$name:ident,$default_state:expr) => {{
         use $crate::Registry;
-        let $name = ID(stringify!(mod_id), stringify!($name));
+        let id = ID(stringify!($mod_id), stringify!($name));
         $api.event_bus
             .event_registry
-            .register(Arc::new($default_state), $name.clone());
+            .register(Arc::new($default_state), id.clone());
     }};
 }
 
