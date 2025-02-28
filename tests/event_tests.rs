@@ -13,7 +13,7 @@ fn test_event_registration_and_handling() {
     let mut api = EngineAPI::default();
 
     // Create a test event
-    #[derive(Clone)]
+    #[derive(Clone, Debug)]
     struct TestEvent {
         pub value: i32,
         pub cancelled: bool,

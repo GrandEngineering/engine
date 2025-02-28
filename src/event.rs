@@ -1,10 +1,10 @@
 use crate::Identifier;
 use crate::Registry;
-use crate::plugin::LibraryInstance;
 use std::any::Any;
 use std::collections::HashMap;
-use std::process;
+use std::fmt::Debug;
 use std::sync::Arc;
+use tracing::instrument;
 pub use tracing::{debug, error, event, info, warn};
 // The Actual Fuck
 // this fucking piece of god given code saves so much time and wastes soo much time
@@ -29,8 +29,12 @@ pub struct EventBus {
     pub event_registry: EngineEventRegistry,
     pub event_handler_registry: EngineEventHandlerRegistry,
 }
-
-pub trait Event: Any + Send + Sync {
+impl Debug for EventBus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+pub trait Event: Any + Send + Sync + Debug {
     fn clone_box(&self) -> Box<dyn Event>;
     fn cancel(&mut self);
     fn is_cancelled(&self) -> bool;
@@ -86,38 +90,9 @@ impl Registry<dyn Event> for EngineEventRegistry {
         self.events.get(identifier).map(|obj| obj.clone_box())
     }
 }
-#[derive(Clone)]
-pub struct OnStartEvent {
-    pub modules: Vec<Arc<LibraryInstance>>,
-    pub cancelled: bool,
-    pub id: Identifier,
-}
-
-impl Event for OnStartEvent {
-    fn clone_box(&self) -> Box<dyn Event> {
-        Box::new(self.clone())
-    }
-
-    fn cancel(&mut self) {
-        self.cancelled = true;
-        process::exit(0)
-    }
-    fn is_cancelled(&self) -> bool {
-        self.cancelled
-    }
-    fn get_id(&self) -> Identifier {
-        self.id.clone()
-    }
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-}
 
 impl EventBus {
+    #[instrument]
     pub fn handle<T: Event>(&self, id: Identifier, event: &mut T) {
         debug!("EventBus: Processing event {}.{}", id.0, id.1);
         let handlers: Option<&Vec<Arc<dyn EventHandler>>> =
