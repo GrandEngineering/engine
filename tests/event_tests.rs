@@ -1,5 +1,5 @@
 use enginelib::{
-    BuildEventHandler, Registry,
+    RegisterEventHandler, Registry,
     api::EngineAPI,
     event::{Event, EventCTX, EventHandler},
     events::ID,
@@ -42,7 +42,7 @@ fn test_event_registration_and_handling() {
     }
 
     // Create a test handler
-    BuildEventHandler!(TestHandler, TestEvent, |event: &mut TestEvent| {
+    RegisterEventHandler!(TestHandler, TestEvent, |event: &mut TestEvent| {
         event.value += 1;
     });
 

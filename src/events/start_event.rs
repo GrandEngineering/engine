@@ -1,22 +1,29 @@
 use std::{any::Any, process, sync::Arc};
 
-use crate::{event::Event, plugin::LibraryMetadata, Identifier};
+use crate::{
+    Identifier,
+    api::EngineAPI,
+    event::Event,
+    plugin::{LibraryManager, LibraryMetadata},
+};
 
-#[derive(Clone)]
+use super::{Events, ID};
+
+#[derive(Clone, Debug)]
 pub struct StartEvent {
     pub modules: Vec<Arc<LibraryMetadata>>,
     pub cancelled: bool,
     pub id: Identifier,
 }
-#[macro_export]
-macro_rules! StartEvent {
-    ($lib_manager:expr, $api:expr) => {
-        $api.event_bus.handle(
+
+impl Events {
+    pub fn StartEvent(api: &mut EngineAPI, lib_manager: &mut LibraryManager) {
+        api.event_bus.handle(
             ID("core", "start_event"),
-            &mut events::start_event::StartEvent {
+            &mut StartEvent {
                 cancelled: false,
                 id: ID("core", "start_event").clone(),
-                modules: $lib_manager
+                modules: lib_manager
                     .libraries
                     .values()
                     .cloned()
@@ -24,8 +31,9 @@ macro_rules! StartEvent {
                     .collect(),
             },
         );
-    };
+    }
 }
+
 impl Event for StartEvent {
     fn clone_box(&self) -> Box<dyn Event> {
         Box::new(self.clone())

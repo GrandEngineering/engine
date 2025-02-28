@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! register_event {
-    ($api:expr,$name:ident,$default_state:expr) => {
+    ($api:expr,$mod_id:ident,$name:ident,$default_state:expr) => {
         use $crate::Registry;
         let $name = ID("core", stringify!($name));
         $api.event_bus
@@ -8,9 +8,8 @@ macro_rules! register_event {
             .register(Arc::new($default_state), $name.clone());
     };
 }
-
 #[macro_export]
-macro_rules! BuildEventHandler {
+macro_rules! RegisterEventHandler {
     ($handler:ident,$event:ty,$mod_ctx:ty, $handler_fn:expr) => {
         use std::sync::Arc;
         pub struct $handler {

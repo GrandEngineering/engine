@@ -1,6 +1,6 @@
-use crate::plugin::LibraryInstance;
 use crate::Identifier;
 use crate::Registry;
+use crate::plugin::LibraryInstance;
 use std::any::Any;
 use std::collections::HashMap;
 use std::process;
@@ -35,7 +35,6 @@ pub trait Event: Any + Send + Sync {
     fn cancel(&mut self);
     fn is_cancelled(&self) -> bool;
     fn get_id(&self) -> Identifier;
-
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
