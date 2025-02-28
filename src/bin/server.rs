@@ -29,7 +29,17 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Cgrpcmsg>,
     ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
-        return Err(tonic::Status::internal("sucks"));
+        let mut api = self.EngineAPI.write().await;
+        let mut out = Arc::new(std::sync::RwLock::new(Vec::new()));
+        Events::CgrpcEvent(
+            &mut api,
+            ID("engine_core", "grpc"),
+            request.get_ref().event_payload.clone(),
+            out.clone(),
+        );
+        let mut res = request.get_ref().clone();
+        res.event_payload = out.read().unwrap().clone();
+        return Ok(tonic::Response::new(res));
     }
     async fn aquire_task_reg(
         &self,
