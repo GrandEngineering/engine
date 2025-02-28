@@ -18,7 +18,7 @@ impl Events {
             crate::events::cgrpc_event::CgrpcEvent {
                 cancelled: false,
                 handler_id: ("".to_string(), "".to_string()),
-                id: cgrpc_event.clone(),
+                id: ("core".to_string(), "cgrpc_event".to_string()),
                 payload: Vec::new(),
                 output: Arc::new(RwLock::new(Vec::new()))
             }
@@ -30,8 +30,8 @@ impl Events {
             start_event,
             crate::events::start_event::StartEvent {
                 modules: vec![],
-                id: start_event.clone(),
                 cancelled: false,
+                id: ("core".to_string(), "start_event".to_string())
             }
         );
     }
