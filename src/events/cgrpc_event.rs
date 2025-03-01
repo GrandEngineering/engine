@@ -29,8 +29,8 @@ macro_rules! RegisterCgrpcEventHandler {
         impl EventCTX<CgrpcEvent> for $handler {
             fn handleCTX(&self, event: &mut CgrpcEvent) {
                 let id: (String, String) = (
-                    stringify!(handler_mod_id).to_string(),
-                    stringify!(handler_id).to_string(),
+                    stringify!($handler_mod_id).to_string(),
+                    stringify!($handler_id).to_string(),
                 );
                 info!(
                     "ID Check, req {}:{}  curr {}:{}",
