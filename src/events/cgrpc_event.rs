@@ -34,7 +34,7 @@ macro_rules! RegisterCgrpcEventHandler {
                 );
                 info!(
                     "ID Check, req {}:{}  curr {}:{}",
-                    event.handler_id.0, event.handler_id.handler_id.1, id.0, id.1
+                    event.handler_id.0, event.handler_id.1, id.0, id.1
                 );
                 if (id == event.handler_id) {
                     $handler_fn(event)
