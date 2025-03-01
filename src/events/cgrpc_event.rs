@@ -32,6 +32,7 @@ macro_rules! RegisterCgrpcEventHandler {
                     stringify!(handler_mod_id).to_string(),
                     stringify!(handler_id).to_string(),
                 );
+                info!("ID Check");
                 if (id == event.handler_id) {
                     $handler_fn(event)
                 }
