@@ -2,6 +2,7 @@ use tracing::{Level, debug};
 
 use crate::{
     Identifier, Registry,
+    config::Config,
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},
     events::Events,
     plugin::LibraryManager,
@@ -11,6 +12,7 @@ pub use bincode::deserialize;
 pub use bincode::serialize;
 use std::{collections::HashMap, sync::Arc};
 pub struct EngineAPI {
+    pub cfg: Config,
     pub task_queue: TaskQueue,
     pub task_registry: EngineTaskRegistry,
     pub event_bus: EventBus,
@@ -21,6 +23,7 @@ pub struct EngineAPI {
 impl Default for EngineAPI {
     fn default() -> Self {
         Self {
+            cfg: Config::new(),
             task_queue: TaskQueue::default(),
             db: sled::open("engine_db").unwrap(),
             lib_manager: LibraryManager::default(),
