@@ -28,6 +28,14 @@ impl Engine for EngineService {
         request: tonic::Request<proto::Cgrpcmsg>,
     ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
+        let mut check = false;
+        match api.cfg.config_toml.cgrpc_token.clone() {
+            None => check = true,
+            Some(x) => check = (x == request.get_ref().token),
+        }
+        if !check {
+            return Err(tonic::Status::permission_denied("Invalid CGRPC Token"));
+        };
         let mut out = Arc::new(std::sync::RwLock::new(Vec::new()));
         Events::CgrpcEvent(
             &mut api,
