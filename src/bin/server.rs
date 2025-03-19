@@ -77,6 +77,7 @@ impl Engine for EngineService {
         let response = proto::Task {
             task_id: input.task_id.clone(),
             task_payload: tsx.to_bytes(),
+            payload: Vec::new(),
         };
         Ok(tonic::Response::new(response))
     }
@@ -92,7 +93,16 @@ impl Engine for EngineService {
         );
         let tsk_inst = self.EngineAPI.read().await.task_registry.get(&id).unwrap();
         let tsk: Box<dyn Task> = tsk_inst.from_bytes(&task.task_payload);
-        self.EngineAPI.write().await.task_queue.tasks.push(tsk);
+        self.EngineAPI
+            .write()
+            .await
+            .task_queue
+            .tasks
+            .get(&id)
+            .unwrap()
+            .lock()
+            .unwrap()
+            .push(tsk);
         Err(tonic::Status::aborted("Error"))
     }
 }
