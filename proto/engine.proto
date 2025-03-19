@@ -14,6 +14,7 @@ message cgrpcmsg {
   string handler_mod_id = 1;
   string handler_id = 2;
   bytes event_payload = 3;
+  string token = 4;
 }
 
 message TaskRegistry {
