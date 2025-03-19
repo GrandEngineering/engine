@@ -472,7 +472,7 @@ dependencies = [
 [[package]]
 name = "enginelib"
 version = "0.2.0"
-source = "git+https://github.com/GrandEngineering/enginelib.git#a71674ff528a8b527973aa3c7f3dad3e3d7232b3"
+source = "git+https://github.com/GrandEngineering/enginelib.git#34135078aa65e164907c6e317edcd4fb1e9438cc"
 dependencies = [
  "bincode",
  "chrono",
@@ -481,6 +481,7 @@ dependencies = [
  "macros",
  "oxifs",
  "serde",
+ "sled",
  "toml",
  "tracing",
  "tracing-subscriber",
@@ -1697,7 +1698,7 @@ checksum = "30bde2b3dc3671ae49d8e2e9f044c7c005836e7a023ee57cffa25ab82764bb9e"
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+https://github.com/GrandEngineering/enginelib.git#a71674ff528a8b527973aa3c7f3dad3e3d7232b3"
+source = "git+https://github.com/GrandEngineering/enginelib.git#34135078aa65e164907c6e317edcd4fb1e9438cc"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2430,9 +2431,9 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.19.0"
+version = "3.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "488960f40a3fd53d72c2a29a58722561dee8afdd175bd88e3db4677d7b2ba600"
+checksum = "7437ac7763b9b123ccf33c338a5cc1bac6f69b45a136c19bdd8a65e3916435bf"
 dependencies = [
  "fastrand",
  "getrandom 0.3.2",

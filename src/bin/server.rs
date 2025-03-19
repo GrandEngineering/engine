@@ -20,8 +20,6 @@ mod proto {
 #[allow(non_snake_case)]
 struct EngineService {
     pub EngineAPI: Arc<RwLock<EngineAPI>>,
-    pub libs: LibraryManager,
-    pub db: sled::Db,
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
@@ -110,23 +108,11 @@ impl Engine for EngineService {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
-    EngineAPI::setup_logger();
-    Events::init(&mut api);
-    let mut lib_manager = LibraryManager::default();
-    #[cfg(feature = "dev")]
-    lib_manager.load_library("./target/release/libengine_core.so", &mut api);
-    #[cfg(not(feature = "dev"))]
-    lib_manager.load_modules(&mut api);
-    Events::StartEvent(&mut api, &mut lib_manager);
+    EngineAPI::init(&mut api);
+    Events::StartEvent(&mut api);
     let addr = "[::1]:50051".parse().unwrap();
-    let db: sled::Db = sled::open("engine_db")?;
-    let task_queue = TaskQueueStorage::default();
-    let te = bincode::serialize(&task_queue).unwrap();
-    db.insert("tasks", te)?;
     let engine = EngineService {
         EngineAPI: Arc::new(RwLock::new(api)),
-        libs: lib_manager,
-        db,
     };
 
     let reflection_service = tonic_reflection::server::Builder::configure()
