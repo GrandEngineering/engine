@@ -4,7 +4,7 @@ use enginelib::{
     event::{Event, EventCTX, EventHandler},
     events::ID,
 };
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tracing_test::traced_test;
 
 #[traced_test]
@@ -113,11 +113,27 @@ fn test_task_queue() {
         value: 0,
         id: ID("test", "test_task"),
     };
-
-    api.task_queue.tasks.push(Box::new(task.clone()));
-
+    let id = ("test".into(), "test_task".into());
+    api.task_queue
+        .tasks
+        .insert(id.clone(), Arc::new(Mutex::new(Vec::new())));
+    api.task_queue
+        .tasks
+        .get(&id)
+        .unwrap()
+        .lock()
+        .unwrap()
+        .push(Box::new(task));
     // Test task execution
-    if let Some(task) = api.task_queue.tasks.first_mut() {
+    if let Some(task) = api
+        .task_queue
+        .tasks
+        .get(&id)
+        .unwrap()
+        .lock()
+        .unwrap()
+        .first_mut()
+    {
         let task: &mut TestTask = unsafe { &mut *((task as *mut Box<dyn Task>) as *mut TestTask) };
         let mut task = task.clone();
         task.run(Some(Runner::CPU));
@@ -154,15 +170,23 @@ fn test_task_serialization() {
             Box::new(bincode::deserialize::<TestTask>(bytes).unwrap())
         }
     }
-
+    let id = ID("test", "test_task");
     let mut api = EngineAPI::default();
     let task = TestTask {
         value: 42,
         id: ID("test", "test_task"),
     };
 
-    api.task_queue.tasks.push(Box::new(task));
-
+    api.task_queue
+        .tasks
+        .insert(id.clone(), Arc::new(Mutex::new(Vec::new())));
+    api.task_queue
+        .tasks
+        .get(&id)
+        .unwrap()
+        .lock()
+        .unwrap()
+        .push(Box::new(task));
     // Test serialization
     let storage = TaskQueueStorage::from_task_queue(&api.task_queue);
     assert_eq!(storage.tasks.len(), 1);
