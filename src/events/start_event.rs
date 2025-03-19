@@ -17,7 +17,8 @@ pub struct StartEvent {
 }
 
 impl Events {
-    pub fn StartEvent(api: &mut EngineAPI, lib_manager: &mut LibraryManager) {
+    pub fn StartEvent(api: &mut EngineAPI) {
+        let lib_manager = api.lib_manager.clone();
         api.event_bus.handle(
             ID("core", "start_event"),
             &mut StartEvent {
