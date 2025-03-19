@@ -1,6 +1,6 @@
 use crate::Identifier;
 use crate::api::EngineAPI;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 pub mod cgrpc_event;
 pub mod start_event;
 
@@ -11,6 +11,11 @@ pub fn ID(namespace: &str, id: &str) -> Identifier {
 
 impl Events {
     pub fn init(api: &mut EngineAPI) {
+        for (id, tsk) in api.task_registry.tasks.iter() {
+            api.task_queue
+                .tasks
+                .insert(id.clone(), Arc::new(Mutex::new(Vec::new())));
+        }
         crate::register_event!(
             api,
             core,

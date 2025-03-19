@@ -3,6 +3,8 @@ use tracing::{Level, debug};
 use crate::{
     Identifier, Registry,
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},
+    events::Events,
+    plugin::LibraryManager,
     task::{Task, TaskQueue},
 };
 pub use bincode::deserialize;
@@ -12,11 +14,16 @@ pub struct EngineAPI {
     pub task_queue: TaskQueue,
     pub task_registry: EngineTaskRegistry,
     pub event_bus: EventBus,
+    pub db: sled::Db,
+    pub lib_manager: LibraryManager,
 }
+
 impl Default for EngineAPI {
     fn default() -> Self {
         Self {
             task_queue: TaskQueue::default(),
+            db: sled::open("engine_db").unwrap(),
+            lib_manager: LibraryManager::default(),
             task_registry: EngineTaskRegistry::default(),
             event_bus: EventBus {
                 event_registry: EngineEventRegistry {
@@ -30,6 +37,22 @@ impl Default for EngineAPI {
     }
 }
 impl EngineAPI {
+    pub fn init(api: &mut Self) {
+        Self::setup_logger();
+        Events::init(api);
+        let mut newLibManager = LibraryManager::default();
+        newLibManager.load_modules(api);
+        api.lib_manager = newLibManager;
+    }
+    pub fn init_dev(api: &mut Self) {
+        Self::setup_logger();
+        Events::init(api);
+        let mut newLibManager = LibraryManager::default();
+        newLibManager
+            .load_library("./target/release/libengine_core.so", api)
+            .unwrap();
+        api.lib_manager = newLibManager;
+    }
     pub fn setup_logger() {
         #[cfg(debug_assertions)]
         tracing_subscriber::FmtSubscriber::builder()
