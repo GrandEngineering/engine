@@ -4,11 +4,18 @@ use std::{fmt::Debug, sync::Arc};
 
 use crate::api::EngineAPI;
 use crate::{Identifier, Registry};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument, warn};
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct StoredTask {
     bytes: Vec<u8>,
+}
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct StoredExecutingTask {
+    bytes: Vec<u8>,
+    user_id: String,
+    given_at: DateTime<Utc>,
 }
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct TaskQueueStorage {
@@ -34,6 +41,10 @@ impl TaskQueueStorage {
 #[derive(Debug, Default, Clone)]
 pub struct TaskQueue {
     pub tasks: HashMap<Identifier, Arc<Mutex<Vec<Box<dyn Task>>>>>,
+}
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct ExecutingTasks {
+    pub tasks: HashMap<Identifier, StoredExecutingTask>,
 }
 impl TaskQueue {
     pub fn from_storage(storage: &TaskQueueStorage, api: &EngineAPI) -> Self {
