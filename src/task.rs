@@ -29,9 +29,11 @@ impl TaskQueueStorage {
                 .lock()
                 .unwrap()
                 .iter()
-                .filter_map(|task| Some(task.to_bytes()))
-                .filter_map(|task_b| Some(StoredTask { bytes: task_b }))
-                .filter_map(|task_struct| Some(Box::new(task_struct)))
+                .map(|task| {
+                    let task_b = task.to_bytes();
+                    let task_struct = StoredTask { bytes: task_b };
+                    Box::new(task_struct)
+                })
                 .collect();
             map.insert(id.clone(), task_vec);
         }
