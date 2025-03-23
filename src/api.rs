@@ -6,7 +6,7 @@ use crate::{
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},
     events::Events,
     plugin::LibraryManager,
-    task::{Task, TaskQueue},
+    task::{ExecutingTasks, Task, TaskQueue, TaskQueueStorage},
 };
 pub use bincode::deserialize;
 pub use bincode::serialize;
@@ -14,6 +14,8 @@ use std::{collections::HashMap, sync::Arc};
 pub struct EngineAPI {
     pub cfg: Config,
     pub task_queue: TaskQueue,
+    pub executing_tasks: ExecutingTasks,
+    pub solved_tasks: TaskQueue,
     pub task_registry: EngineTaskRegistry,
     pub event_bus: EventBus,
     pub db: sled::Db,
@@ -25,6 +27,8 @@ impl Default for EngineAPI {
         Self {
             cfg: Config::new(),
             task_queue: TaskQueue::default(),
+            executing_tasks: ExecutingTasks::default(),
+            solved_tasks: TaskQueue::default(),
             db: sled::open("engine_db").unwrap(),
             lib_manager: LibraryManager::default(),
             task_registry: EngineTaskRegistry::default(),
