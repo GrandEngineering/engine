@@ -47,10 +47,10 @@ impl Events {
         output: Arc<RwLock<bool>>,
     ) {
         api.event_bus.handle(
-            ID("core", "admin_auth_event"),
+            ID("core", "auth_event"),
             &mut AuthEvent {
                 cancelled: false,
-                id: ID("core", "admin_auth_event"),
+                id: ID("core", "auth_event"),
                 handler_id,
                 payload,
                 output,
