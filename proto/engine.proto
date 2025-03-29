@@ -4,10 +4,9 @@ service engine {
   rpc AquireTask(TaskRequest) returns (Task);
   rpc CreateTask(Task) returns (Task);
   rpc AquireTaskReg(empty) returns (TaskRegistry);
-  rpc cgrpc(cgrpcmsg) returns (cgrpcmsg);
   // rpc PublishTask(CompletedTask) returns (TaskStatus);
 }
-
+service Admin { rpc cgrpc(cgrpcmsg) returns (cgrpcmsg); }
 message empty {}
 
 message cgrpcmsg {
