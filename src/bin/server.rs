@@ -13,7 +13,7 @@ use proto::{
 };
 use std::{env::consts::OS, sync::Arc};
 use tokio::sync::RwLock;
-use tonic::transport::Server;
+use tonic::{Request, Status, transport::Server};
 
 mod proto {
     tonic::include_proto!("engine");
@@ -117,6 +117,15 @@ impl Engine for EngineService {
             .push(tsk);
         Err(tonic::Status::aborted("Error"))
     }
+}
+
+fn check_cgrpc_auth(req: Request<()>) -> Result<(), Status> {
+    // trigger check_auth event
+    Err(Status::unauthenticated("No valid auth Token"))
+}
+fn check_task_auth(req: Request<()>) -> Result<(), Status> {
+    // trigger check_auth event
+    Err(Status::unauthenticated("No valid auth Token"))
 }
 
 #[tokio::main]
