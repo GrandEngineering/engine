@@ -1,9 +1,10 @@
 use crate::Identifier;
 use crate::api::EngineAPI;
 use std::sync::{Arc, Mutex, RwLock};
+pub mod admin_auth_event;
+pub mod auth_event;
 pub mod cgrpc_event;
 pub mod start_event;
-
 pub struct Events {}
 pub fn ID(namespace: &str, id: &str) -> Identifier {
     (namespace.to_string(), id.to_string())
