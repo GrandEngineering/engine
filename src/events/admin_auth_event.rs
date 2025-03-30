@@ -16,21 +16,25 @@ pub struct AdminAuthEvent {
 }
 #[macro_export]
 macro_rules! RegisterAdminAuthEventHandler {
-    ($handler:ident,$handler_mod_id:ident,$handler_id:ident,$handler_fn:expr) => {
+    ($handler:ident,$handler_fn:expr) => {{
+        use crate::event::Event;
+        use crate::event::EventCTX;
+        use crate::event::EventHandler;
+        use crate::events::admin_auth_event::AdminAuthEvent;
         pub struct $handler;
         impl EventHandler for $handler {
             fn handle(&self, event: &mut dyn Event) {
-                let event: &mut CgrpcEvent =
-                    <Self as EventCTX<CgrpcEvent>>::get_event::<CgrpcEvent>(event);
+                let event: &mut AdminAuthEvent =
+                    <Self as EventCTX<AdminAuthEvent>>::get_event::<AdminAuthEvent>(event);
                 self.handleCTX(event);
             }
         }
-        impl EventCTX<CgrpcEvent> for $handler {
-            fn handleCTX(&self, event: &mut CgrpcEvent) {
+        impl EventCTX<AdminAuthEvent> for $handler {
+            fn handleCTX(&self, event: &mut AdminAuthEvent) {
                 $handler_fn(event)
             }
         }
-    };
+    }};
 }
 impl Events {
     pub fn CheckAdminAuth(api: &mut EngineAPI, payload: String) -> bool {

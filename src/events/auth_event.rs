@@ -16,21 +16,25 @@ pub struct AuthEvent {
 }
 #[macro_export]
 macro_rules! RegisterAuthEventHandler {
-    ($handler:ident,$handler_mod_id:ident,$handler_id:ident,$handler_fn:expr) => {
+    ($handler:ident,$handler_fn:expr) => {{
+        use crate::event::Event;
+        use crate::event::EventCTX;
+        use crate::event::EventHandler;
+        use crate::events::auth_event::AuthEvent;
         pub struct $handler;
         impl EventHandler for $handler {
             fn handle(&self, event: &mut dyn Event) {
-                let event: &mut CgrpcEvent =
-                    <Self as EventCTX<CgrpcEvent>>::get_event::<CgrpcEvent>(event);
+                let event: &mut AuthEvent =
+                    <Self as EventCTX<AuthEvent>>::get_event::<AuthEvent>(event);
                 self.handleCTX(event);
             }
         }
-        impl EventCTX<CgrpcEvent> for $handler {
-            fn handleCTX(&self, event: &mut CgrpcEvent) {
+        impl EventCTX<AuthEvent> for $handler {
+            fn handleCTX(&self, event: &mut AuthEvent) {
                 $handler_fn(event)
             }
         }
-    };
+    }};
 }
 impl Events {
     pub fn CheckAuth(api: &mut EngineAPI, payload: String) -> bool {
@@ -44,7 +48,6 @@ impl Events {
             &mut AuthEvent {
                 cancelled: false,
                 id: ID("core", "auth_event"),
-
                 payload,
                 output,
             },

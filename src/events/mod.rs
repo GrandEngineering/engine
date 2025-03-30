@@ -1,5 +1,7 @@
-use crate::Identifier;
-use crate::api::EngineAPI;
+use auth_event::AuthEvent;
+
+use crate::api::{self, EngineAPI};
+use crate::{Identifier, RegisterAdminAuthEventHandler, RegisterAuthEventHandler};
 use std::sync::{Arc, Mutex, RwLock};
 pub mod admin_auth_event;
 pub mod auth_event;
@@ -11,6 +13,21 @@ pub fn ID(namespace: &str, id: &str) -> Identifier {
 }
 
 impl Events {
+    pub fn init_auth(api: &mut EngineAPI) {
+        RegisterAuthEventHandler!(AuthHandler, |event: &mut AuthEvent| {
+            *event.output.write().unwrap() = true;
+        });
+        let token = api.cfg.config_toml.cgrpc_token.clone();
+        if let Some(token) = token {
+            RegisterAdminAuthEventHandler!(AdminAuthHandler, |event: &mut AdminAuthEvent| {
+                *event.output.write().unwrap() = true;
+            });
+        } else {
+            RegisterAdminAuthEventHandler!(AdminAuthHandler, |event: &mut AdminAuthEvent| {
+                *event.output.write().unwrap() = true;
+            });
+        }
+    }
     pub fn init(api: &mut EngineAPI) {
         for (id, tsk) in api.task_registry.tasks.iter() {
             api.task_queue
