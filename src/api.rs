@@ -44,6 +44,29 @@ impl Default for EngineAPI {
     }
 }
 impl EngineAPI {
+    pub fn test_default() -> Self {
+        Self {
+            cfg: Config::new(),
+            task_queue: TaskQueue::default(),
+            db: sled::Config::new()
+                .temporary(true)
+                .flush_every_ms(None)
+                .open()
+                .unwrap(),
+            lib_manager: LibraryManager::default(),
+            task_registry: EngineTaskRegistry::default(),
+            event_bus: EventBus {
+                event_registry: EngineEventRegistry {
+                    events: HashMap::new(),
+                },
+                event_handler_registry: EngineEventHandlerRegistry {
+                    event_handlers: HashMap::new(),
+                },
+            },
+            solved_tasks: SolvedTasks::default(),
+            executing_tasks: ExecutingTaskQueue::default(),
+        }
+    }
     pub fn init(api: &mut Self) {
         Self::setup_logger();
         Events::init(api);
