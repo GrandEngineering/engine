@@ -1,5 +1,5 @@
 # GE Engine
-A blazingly fast distrubted computing project.
+A blazingly fast distrubted computing project made with Rust and Tonic.
 
 ## Modding
 GE Engine provides an API with an event system and tasks allowing for great moddability. To create a mod dev env use rustforge our own tool that manages it all for you.
