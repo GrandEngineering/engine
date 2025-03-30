@@ -19,58 +19,13 @@ pub struct StoredExecutingTask {
 }
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct TaskQueueStorage {
-    pub tasks: HashMap<Identifier, Vec<Box<StoredTask>>>,
+    pub tasks: HashMap<Identifier, Vec<StoredTask>>,
 }
-impl TaskQueueStorage {
-    pub fn from_task_queue(task_queue: &TaskQueue) -> Self {
-        let mut map: HashMap<Identifier, Vec<Box<StoredTask>>> = HashMap::new();
-        for (id, queue) in task_queue.tasks.iter() {
-            let task_vec: Vec<Box<StoredTask>> = queue
-                .lock()
-                .unwrap()
-                .iter()
-                .map(|task| {
-                    let task_b = task.to_bytes();
-                    let task_struct = StoredTask { bytes: task_b };
-                    Box::new(task_struct)
-                })
-                .collect();
-            map.insert(id.clone(), task_vec);
-        }
-        Self { tasks: map }
-    }
-}
-#[derive(Debug, Default, Clone)]
-pub struct TaskQueue {
-    pub tasks: HashMap<Identifier, Arc<Mutex<Vec<Box<dyn Task>>>>>,
-}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ExecutingTasks {
     pub tasks: HashMap<Identifier, StoredExecutingTask>,
 }
-impl TaskQueue {
-    pub fn from_storage(storage: &TaskQueueStorage, api: &EngineAPI) -> Self {
-        let mut map: HashMap<(String, String), Arc<Mutex<Vec<Box<dyn Task>>>>> = HashMap::new();
-        for (id, tasks) in storage.tasks.iter() {
-            let task_vec: Vec<Box<dyn Task>> = tasks
-                .iter()
-                .filter_map(|task_bytes| match api.task_registry.get(&id) {
-                    Some(x) => Some(x.from_bytes(&task_bytes.bytes)),
-                    None => {
-                        error!(
-                            "TaskQueue: Failed to deserialize task {}.{} - invalid data",
-                            &id.0, &id.1
-                        );
-                        None
-                    }
-                })
-                .collect();
-            map.insert(id.clone(), Arc::new(Mutex::new(task_vec)));
-        }
-        TaskQueue { tasks: map }
-    }
-}
-
 pub trait Task: Debug + Sync + Send {
     fn get_id(&self) -> Identifier;
     fn clone_box(&self) -> Box<dyn Task>;
