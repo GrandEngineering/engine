@@ -33,6 +33,7 @@ impl Engine for EngineService {
     ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
         let challenge = get_auth(&request);
+        let db = api.db.clone();
         let output = Events::CheckAdminAuth(
             &mut api,
             challenge,
@@ -40,6 +41,7 @@ impl Engine for EngineService {
                 request.get_ref().handler_mod_id.clone(),
                 request.get_ref().handler_id.clone(),
             ),
+            db,
         );
         if !output {
             return Err(tonic::Status::permission_denied("Invalid CGRPC Auth"));
@@ -60,9 +62,10 @@ impl Engine for EngineService {
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
+        let db = api.db.clone();
         let challenge = get_auth(&request);
         let uid = get_uid(&request);
-        if !Events::CheckAuth(&mut api, uid, challenge) {
+        if !Events::CheckAuth(&mut api, uid, challenge, db) {
             info!("Aquire Task Reg denied due to Invalid Auth");
             return Err(Status::permission_denied("invalid auth"));
         };
@@ -83,15 +86,16 @@ impl Engine for EngineService {
         let mut api = self.EngineAPI.write().await;
         let challenge = get_auth(&request);
         let uid = get_uid(&request);
-        if !Events::CheckAuth(&mut api, uid, challenge) {
+        let db = api.db.clone();
+        if !Events::CheckAuth(&mut api, uid, challenge, db) {
             info!("Aquire Task denied due to Invalid Auth");
             return Err(Status::permission_denied("invalid auth"));
         };
+
         // Todo: check for wrong input to not cause a Panic out of bounds.
         let input = request.get_ref();
         println!("Got a request {:?}", input);
         let task_id = input.task_id.clone();
-
         let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
         let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
         println!("namespace:task {}:{}", &namespace, &task_name);
@@ -116,7 +120,8 @@ impl Engine for EngineService {
         let mut api = self.EngineAPI.write().await;
         let challenge = get_auth(&request);
         let uid = get_uid(&request);
-        if !Events::CheckAuth(&mut api, uid, challenge) {
+        let db = api.db.clone();
+        if !Events::CheckAuth(&mut api, uid, challenge, db) {
             info!("Create Task denied due to Invalid Auth");
             return Err(Status::permission_denied("invalid auth"));
         };
