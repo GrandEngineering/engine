@@ -1,4 +1,5 @@
 use bincode::serialize;
+use engine::get_auth;
 use enginelib::{
     Identifier, RawIdentier, Registry,
     api::EngineAPI,
@@ -34,16 +35,9 @@ impl Admin for EngineService {
         request: tonic::Request<proto::Cgrpcmsg>,
     ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
-        let payload = request
-            .metadata()
-            .get("authorization")
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string();
-        let output = Arc::new(RS_RwLock::new(false));
-        Events::AdminAuthEvent(&mut api, payload, output.clone());
-        if !*output.read().unwrap() {
+        let payload = get_auth!(request);
+        let output = Events::CheckAdminAuth(&mut api, payload);
+        if !output {
             return Err(tonic::Status::permission_denied("Invalid CGRPC Auth"));
         };
         let mut out = Arc::new(std::sync::RwLock::new(Vec::new()));
