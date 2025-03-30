@@ -33,6 +33,11 @@ macro_rules! RegisterAuthEventHandler {
     };
 }
 impl Events {
+    pub fn CheckAuth(api: &mut EngineAPI, payload: String) -> bool {
+        let output = Arc::new(RwLock::new(false));
+        Self::AuthEvent(api, payload, output.clone());
+        return *output.read().unwrap();
+    }
     pub fn AuthEvent(api: &mut EngineAPI, payload: String, output: Arc<RwLock<bool>>) {
         api.event_bus.handle(
             ID("core", "auth_event"),
