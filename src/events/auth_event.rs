@@ -3,6 +3,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use sled::Db;
+
 use crate::{Identifier, api::EngineAPI, event::Event};
 
 use super::{Events, ID};
@@ -13,6 +15,7 @@ pub struct AuthEvent {
     pub id: Identifier,
     pub uid: String,
     pub challenge: String,
+    pub db: Db,
     pub output: Arc<RwLock<bool>>,
 }
 #[macro_export]
@@ -38,20 +41,22 @@ macro_rules! RegisterAuthEventHandler {
     };
 }
 impl Events {
-    pub fn CheckAuth(api: &mut EngineAPI, uid: String, challenge: String) -> bool {
+    pub fn CheckAuth(api: &mut EngineAPI, uid: String, challenge: String, db: Db) -> bool {
         let output = Arc::new(RwLock::new(false));
-        Self::AuthEvent(api, uid, challenge, output.clone());
+        Self::AuthEvent(api, uid, challenge, db, output.clone());
         return *output.read().unwrap();
     }
     pub fn AuthEvent(
         api: &mut EngineAPI,
         uid: String,
         challenge: String,
+        db: Db,
         output: Arc<RwLock<bool>>,
     ) {
         api.event_bus.handle(
             ID("core", "auth_event"),
             &mut AuthEvent {
+                db,
                 cancelled: false,
                 id: ID("core", "auth_event"),
                 uid,

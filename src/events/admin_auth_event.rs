@@ -3,6 +3,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use sled::Db;
+
 use crate::{Identifier, api::EngineAPI, event::Event};
 
 use super::{Events, ID};
@@ -13,6 +15,7 @@ pub struct AdminAuthEvent {
     pub id: Identifier,
     pub payload: String,
     pub target: Identifier,
+    pub db: Db,
     pub output: Arc<RwLock<bool>>,
 }
 #[macro_export]
@@ -66,20 +69,27 @@ macro_rules! RegisterAdminAuthEventHandler {
     };
 }
 impl Events {
-    pub fn CheckAdminAuth(api: &mut EngineAPI, payload: String, target: Identifier) -> bool {
+    pub fn CheckAdminAuth(
+        api: &mut EngineAPI,
+        payload: String,
+        target: Identifier,
+        db: Db,
+    ) -> bool {
         let output = Arc::new(RwLock::new(false));
-        Self::AdminAuthEvent(api, payload, target, output.clone());
+        Self::AdminAuthEvent(api, payload, target, db, output.clone());
         return *output.read().unwrap();
     }
     pub fn AdminAuthEvent(
         api: &mut EngineAPI,
         payload: String,
         target: Identifier,
+        db: Db,
         output: Arc<RwLock<bool>>,
     ) {
         api.event_bus.handle(
             ID("core", "admin_auth_event"),
             &mut AdminAuthEvent {
+                db,
                 cancelled: false,
                 id: ID("core", "admin_auth_event"),
                 payload,
