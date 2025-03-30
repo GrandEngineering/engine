@@ -11,7 +11,8 @@ use super::{Events, ID};
 pub struct AuthEvent {
     pub cancelled: bool,
     pub id: Identifier,
-    pub payload: String,
+    pub uid: String,
+    pub challenge: String,
     pub output: Arc<RwLock<bool>>,
 }
 #[macro_export]
@@ -37,18 +38,24 @@ macro_rules! RegisterAuthEventHandler {
     };
 }
 impl Events {
-    pub fn CheckAuth(api: &mut EngineAPI, payload: String) -> bool {
+    pub fn CheckAuth(api: &mut EngineAPI, uid: String, challenge: String) -> bool {
         let output = Arc::new(RwLock::new(false));
-        Self::AuthEvent(api, payload, output.clone());
+        Self::AuthEvent(api, uid, challenge, output.clone());
         return *output.read().unwrap();
     }
-    pub fn AuthEvent(api: &mut EngineAPI, payload: String, output: Arc<RwLock<bool>>) {
+    pub fn AuthEvent(
+        api: &mut EngineAPI,
+        uid: String,
+        challenge: String,
+        output: Arc<RwLock<bool>>,
+    ) {
         api.event_bus.handle(
             ID("core", "auth_event"),
             &mut AuthEvent {
                 cancelled: false,
                 id: ID("core", "auth_event"),
-                payload,
+                uid,
+                challenge,
                 output,
             },
         );
