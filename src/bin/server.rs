@@ -58,6 +58,9 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
+        let mut api = self.EngineAPI.write().await;
+        let payload = get_auth!(request);
+        Events::CheckAuth(&mut api, payload);
         let mut tasks: Vec<RawIdentier> = Vec::new();
         for (k, v) in &self.EngineAPI.read().await.task_registry.tasks {
             let js: Vec<String> = vec![k.0.clone(), k.1.clone()];
@@ -72,6 +75,9 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::TaskRequest>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
+        let mut api = self.EngineAPI.write().await;
+        let payload = get_auth!(request);
+        Events::CheckAuth(&mut api, payload);
         // Todo: check for wrong input to not cause a Panic out of bounds.
         let input = request.get_ref();
         println!("Got a request {:?}", input);
@@ -98,6 +104,9 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Task>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
+        let mut api = self.EngineAPI.write().await;
+        let payload = get_auth!(request);
+        Events::CheckAuth(&mut api, payload);
         let task = request.get_ref();
         let task_id = task.task_id.clone();
         let id: Identifier = (
