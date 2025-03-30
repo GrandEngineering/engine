@@ -8,10 +8,7 @@ use enginelib::{
     plugin::LibraryManager,
     task::{Task, TaskQueue, TaskQueueStorage},
 };
-use proto::{
-    admin_server::Admin,
-    engine_server::{Engine, EngineServer},
-};
+use proto::engine_server::{Engine, EngineServer};
 use std::{
     env::consts::OS,
     sync::{Arc, RwLock as RS_RwLock},
@@ -29,7 +26,7 @@ struct EngineService {
     pub EngineAPI: Arc<RwLock<EngineAPI>>,
 }
 #[tonic::async_trait]
-impl Admin for EngineService {
+impl Engine for EngineService {
     async fn cgrpc(
         &self,
         request: tonic::Request<proto::Cgrpcmsg>,
@@ -58,9 +55,6 @@ impl Admin for EngineService {
         res.event_payload = out.read().unwrap().clone();
         return Ok(tonic::Response::new(res));
     }
-}
-#[tonic::async_trait]
-impl Engine for EngineService {
     async fn aquire_task_reg(
         &self,
         request: tonic::Request<proto::Empty>,
@@ -73,7 +67,7 @@ impl Engine for EngineService {
             return Err(Status::permission_denied("invalid auth"));
         };
         let mut tasks: Vec<RawIdentier> = Vec::new();
-        for (k, v) in &self.EngineAPI.read().await.task_registry.tasks {
+        for (k, v) in &mut api.task_registry.tasks {
             let js: Vec<String> = vec![k.0.clone(), k.1.clone()];
             let jstr = js.join(":");
             tasks.push(jstr);
