@@ -11,7 +11,7 @@ macro_rules! register_event {
 
 #[macro_export]
 macro_rules! CheckAdminAuth {
-    () => {
+    () => {{
         let mut api = self.EngineAPI.write().await;
         let payload = request
             .metadata()
@@ -23,7 +23,7 @@ macro_rules! CheckAdminAuth {
         let output = Arc::new(RS_RwLock::new(false));
         Events::AdminAuthEvent(&mut api, payload, output.clone());
         return *output.read().unwrap();
-    };
+    }};
 }
 #[macro_export]
 macro_rules! CheckAuth {
