@@ -10,6 +10,27 @@ macro_rules! register_event {
 }
 
 #[macro_export]
+macro_rules! CheckAuth {
+    () => {
+        let mut api = self.EngineAPI.write().await;
+        let payload = request
+            .metadata()
+            .get("authorization")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        let output = Arc::new(RS_RwLock::new(false));
+        Events::AdminAuthEvent(&mut api, payload, output.clone());
+        return *output.read().unwrap();
+    };
+}
+#[macro_export]
+macro_rules! CheckAdmingAuth {
+    () => {};
+}
+
+#[macro_export]
 macro_rules! RegisterEventHandler {
     ($handler:ident,$event:ty,$mod_ctx:ty, $handler_fn:expr) => {
         use std::sync::Arc;
