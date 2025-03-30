@@ -6,7 +6,7 @@ use enginelib::{
     event::{debug, info},
     events::{self, Events, ID},
     plugin::LibraryManager,
-    task::{Task, TaskQueue, TaskQueueStorage},
+    task::{Task, TaskQueue},
 };
 use proto::engine_server::{Engine, EngineServer};
 use std::{
@@ -94,11 +94,13 @@ impl Engine for EngineService {
 
         // Todo: check for wrong input to not cause a Panic out of bounds.
         let input = request.get_ref();
-        println!("Got a request {:?}", input);
         let task_id = input.task_id.clone();
+        let alen = &task_id.split(":").collect::<Vec<&str>>().len();
+        if *alen != 2 {
+            return Err(Status::data_loss("Invalid Params"));
+        }
         let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
         let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
-        println!("namespace:task {}:{}", &namespace, &task_name);
         let tsx = self
             .EngineAPI
             .read()
@@ -133,16 +135,16 @@ impl Engine for EngineService {
         );
         let tsk_inst = self.EngineAPI.read().await.task_registry.get(&id).unwrap();
         let tsk: Box<dyn Task> = tsk_inst.from_bytes(&task.task_payload);
-        self.EngineAPI
-            .write()
-            .await
-            .task_queue
-            .tasks
-            .get(&id)
-            .unwrap()
-            .lock()
-            .unwrap()
-            .push(tsk);
+        // self.EngineAPI
+        //     .write()
+        //     .await
+        //     .task_queue
+        //     .tasks
+        //     .get(&id)
+        //     .unwrap()
+        //     .lock()
+        //     .unwrap()
+        //     .push(tsk);
         Err(tonic::Status::aborted("Error"))
     }
 }

@@ -23,7 +23,7 @@ message TaskRegistry {
 
 message TaskRequest {
   string task_id = 1; // namespace:task
-  bytes payload = 2;
+  // bytes payload = 2;
 }
 message Task {
   bytes task_payload = 1;
