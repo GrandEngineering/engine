@@ -3,6 +3,7 @@ use engine::{get_auth, get_uid};
 use enginelib::{
     Identifier, RawIdentier, Registry,
     api::EngineAPI,
+    chrono::Utc,
     event::{debug, info},
     events::{self, Events, ID},
     plugin::LibraryManager,
@@ -88,7 +89,7 @@ impl Engine for EngineService {
         let challenge = get_auth(&request);
         let uid = get_uid(&request);
         let db = api.db.clone();
-        if !Events::CheckAuth(&mut api, uid, challenge, db) {
+        if !Events::CheckAuth(&mut api, uid.clone(), challenge, db) {
             info!("Aquire Task denied due to Invalid Auth");
             return Err(Status::permission_denied("invalid auth"));
         };
@@ -121,18 +122,22 @@ impl Engine for EngineService {
         let store = bincode::serialize(&api.task_queue.clone()).unwrap();
         api.db.insert("tasks", store).unwrap();
         // Move it to exec queue
-        let exec_tsks = api
+        let mut exec_tsks = api
             .executing_tasks
             .tasks
             .get(&ID(namespace, task_name))
             .unwrap()
             .clone();
         exec_tsks.push(enginelib::task::StoredExecutingTask {
-            bytes: task_payload,
-            user_id: uid,
-            given_at: (),
+            bytes: task_payload.clone(),
+            user_id: uid.clone(),
+            given_at: Utc::now(),
         });
-
+        api.executing_tasks
+            .tasks
+            .insert(ID(namespace, task_name), exec_tsks);
+        let store = bincode::serialize(&api.executing_tasks.clone()).unwrap();
+        api.db.insert("executing_tasks", store).unwrap();
         let response = proto::Task {
             task_id: input.task_id.clone(),
             task_payload,
