@@ -11,6 +11,7 @@ use enginelib::{
 use proto::engine_server::{Engine, EngineServer};
 use std::{
     env::consts::OS,
+    io::Read,
     sync::{Arc, RwLock as RS_RwLock},
 };
 use tokio::sync::RwLock;
@@ -107,9 +108,34 @@ impl Engine for EngineService {
         if tsx.is_none() {
             return Err(Status::invalid_argument("Task Does not Exist"));
         }
+        let mut map = api
+            .task_queue
+            .tasks
+            .get(&ID(namespace, task_name))
+            .unwrap()
+            .clone();
+        let task_payload = map.first().unwrap().bytes.clone();
+        map.remove(0);
+        // Get Task and remove it from queue
+        api.task_queue.tasks.insert(ID(namespace, task_name), map);
+        let store = bincode::serialize(&api.task_queue.clone()).unwrap();
+        api.db.insert("tasks", store).unwrap();
+        // Move it to exec queue
+        let exec_tsks = api
+            .executing_tasks
+            .tasks
+            .get(&ID(namespace, task_name))
+            .unwrap()
+            .clone();
+        exec_tsks.push(enginelib::task::StoredExecutingTask {
+            bytes: task_payload,
+            user_id: uid,
+            given_at: (),
+        });
+
         let response = proto::Task {
             task_id: input.task_id.clone(),
-            task_payload: tsx.unwrap().to_bytes(),
+            task_payload,
             payload: Vec::new(),
         };
         Ok(tonic::Response::new(response))
