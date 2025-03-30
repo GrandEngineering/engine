@@ -152,6 +152,7 @@ impl Engine for EngineService {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
     EngineAPI::init(&mut api);
+    Events::init_auth(&mut api);
     Events::StartEvent(&mut api);
     let addr = api.cfg.config_toml.port.parse().unwrap();
     let engine = EngineService {
