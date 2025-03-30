@@ -74,6 +74,26 @@ impl EngineAPI {
         newLibManager.load_modules(api);
         api.lib_manager = newLibManager;
     }
+    fn init_db(api: &mut EngineAPI) {
+        let tasks = api.db.get("tasks");
+        let exec_tasks = api.db.get("executing_tasks");
+        if tasks.is_err() {
+            let store = bincode::serialize(&api.task_queue.clone()).unwrap();
+            api.db.insert("tasks", store).unwrap();
+        } else {
+            let store = api.db.get("tasks").unwrap().unwrap();
+            let res: TaskQueue = bincode::deserialize(&store).unwrap();
+            api.task_queue = res;
+        }
+        if exec_tasks.is_err() {
+            let store = bincode::serialize(&api.executing_tasks.clone()).unwrap();
+            api.db.insert("executing_tasks", store).unwrap();
+        } else {
+            let store = api.db.get("executing_tasks").unwrap().unwrap();
+            let res: ExecutingTaskQueue = bincode::deserialize(&store).unwrap();
+            api.executing_tasks = res;
+        };
+    }
     pub fn init_dev(api: &mut Self) {
         Self::setup_logger();
         Events::init(api);
