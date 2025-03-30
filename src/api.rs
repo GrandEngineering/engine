@@ -69,11 +69,13 @@ impl EngineAPI {
     }
     pub fn init(api: &mut Self) {
         Self::setup_logger();
+        Self::init_db(api);
         Events::init(api);
         let mut newLibManager = LibraryManager::default();
         newLibManager.load_modules(api);
         api.lib_manager = newLibManager;
     }
+
     fn init_db(api: &mut EngineAPI) {
         let tasks = api.db.get("tasks");
         let exec_tasks = api.db.get("executing_tasks");
