@@ -11,9 +11,12 @@ use proto::{
     admin_server::Admin,
     engine_server::{Engine, EngineServer},
 };
-use std::{env::consts::OS, sync::Arc};
+use std::{
+    env::consts::OS,
+    sync::{Arc, RwLock as RS_RwLock},
+};
 use tokio::sync::RwLock;
-use tonic::{Request, Status, transport::Server};
+use tonic::{Request, Status, metadata::MetadataValue, transport::Server};
 
 mod proto {
     tonic::include_proto!("engine");
@@ -31,13 +34,17 @@ impl Admin for EngineService {
         request: tonic::Request<proto::Cgrpcmsg>,
     ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
-        let mut check = false;
-        match api.cfg.config_toml.cgrpc_token.clone() {
-            None => check = true,
-            Some(x) => check = (x == request.get_ref().token),
-        }
-        if !check {
-            return Err(tonic::Status::permission_denied("Invalid CGRPC Token"));
+        let payload = request
+            .metadata()
+            .get("authorization")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        let output = Arc::new(RS_RwLock::new(false));
+        Events::AdminAuthEvent(&mut api, payload, output.clone());
+        if !*output.read().unwrap() {
+            return Err(tonic::Status::permission_denied("Invalid CGRPC Auth"));
         };
         let mut out = Arc::new(std::sync::RwLock::new(Vec::new()));
         Events::CgrpcEvent(
@@ -125,6 +132,7 @@ fn check_cgrpc_auth(req: Request<()>) -> Result<(), Status> {
 }
 fn check_task_auth(req: Request<()>) -> Result<(), Status> {
     // trigger check_auth event
+    Events::AuthEvent(api, handler_id, payload, output);
     Err(Status::unauthenticated("No valid auth Token"))
 }
 
