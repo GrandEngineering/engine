@@ -16,7 +16,7 @@ pub struct AuthEvent {
 }
 #[macro_export]
 macro_rules! RegisterAuthEventHandler {
-    ($handler:ident,$handler_fn:expr) => {{
+    ($handler:ident,$handler_fn:expr) => {
         use crate::event::Event;
         use crate::event::EventCTX;
         use crate::event::EventHandler;
@@ -34,7 +34,7 @@ macro_rules! RegisterAuthEventHandler {
                 $handler_fn(event)
             }
         }
-    }};
+    };
 }
 impl Events {
     pub fn CheckAuth(api: &mut EngineAPI, payload: String) -> bool {

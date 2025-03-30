@@ -17,15 +17,35 @@ impl Events {
         RegisterAuthEventHandler!(AuthHandler, |event: &mut AuthEvent| {
             *event.output.write().unwrap() = true;
         });
+        api.event_bus
+            .event_handler_registry
+            .register_handler(AuthHandler {}, ID("core", "auth_event"));
         let token = api.cfg.config_toml.cgrpc_token.clone();
         if let Some(token) = token {
-            RegisterAdminAuthEventHandler!(AdminAuthHandler, |event: &mut AdminAuthEvent| {
-                *event.output.write().unwrap() = true;
-            });
+            RegisterAdminAuthEventHandler!(
+                AdminAuthHandler,
+                String,
+                |event: &mut AdminAuthEvent, mod_ctx: &Arc<String>| {
+                    let token: &Arc<String> = mod_ctx;
+                    let token: String = token.as_str().to_string();
+                    if token == event.payload {
+                        *event.output.write().unwrap() = true;
+                    }
+                }
+            );
+            api.event_bus.event_handler_registry.register_handler(
+                AdminAuthHandler {
+                    mod_ctx: Arc::new(token),
+                },
+                ID("core", "admin_auth_event"),
+            );
         } else {
             RegisterAdminAuthEventHandler!(AdminAuthHandler, |event: &mut AdminAuthEvent| {
                 *event.output.write().unwrap() = true;
             });
+            api.event_bus
+                .event_handler_registry
+                .register_handler(AdminAuthHandler, ID("core", "admin_auth_event"));
         }
     }
     pub fn init(api: &mut EngineAPI) {
