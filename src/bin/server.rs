@@ -97,20 +97,19 @@ impl Engine for EngineService {
         let task_id = input.task_id.clone();
         let alen = &task_id.split(":").collect::<Vec<&str>>().len();
         if *alen != 2 {
-            return Err(Status::data_loss("Invalid Params"));
+            return Err(Status::invalid_argument("Invalid Params"));
         }
         let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
         let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
-        let tsx = self
-            .EngineAPI
-            .read()
-            .await
+        let tsx = api
             .task_registry
-            .get(&(namespace.to_string(), task_name.to_string()))
-            .unwrap();
+            .get(&(namespace.to_string(), task_name.to_string()));
+        if tsx.is_none() {
+            return Err(Status::invalid_argument("Task Does not Exist"));
+        }
         let response = proto::Task {
             task_id: input.task_id.clone(),
-            task_payload: tsx.to_bytes(),
+            task_payload: tsx.unwrap().to_bytes(),
             payload: Vec::new(),
         };
         Ok(tonic::Response::new(response))
