@@ -32,10 +32,10 @@ impl Engine for EngineService {
         request: tonic::Request<proto::Cgrpcmsg>,
     ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
-        let payload = get_auth!(request);
+        let challenge = get_auth(&request);
         let output = Events::CheckAdminAuth(
             &mut api,
-            payload,
+            challenge,
             (
                 request.get_ref().handler_mod_id.clone(),
                 request.get_ref().handler_id.clone(),
@@ -60,14 +60,14 @@ impl Engine for EngineService {
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
-        let challenge = get_auth!(request);
-        let uid = get_uid!(request);
+        let challenge = get_auth(&request);
+        let uid = get_uid(&request);
         if !Events::CheckAuth(&mut api, uid, challenge) {
             info!("Aquire Task Reg denied due to Invalid Auth");
             return Err(Status::permission_denied("invalid auth"));
         };
         let mut tasks: Vec<RawIdentier> = Vec::new();
-        for (k, v) in &mut api.task_registry.tasks {
+        for (k, v) in &api.task_registry.tasks {
             let js: Vec<String> = vec![k.0.clone(), k.1.clone()];
             let jstr = js.join(":");
             tasks.push(jstr);
@@ -81,8 +81,8 @@ impl Engine for EngineService {
         request: tonic::Request<proto::TaskRequest>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
-        let challenge = get_auth!(request);
-        let uid = get_uid!(request);
+        let challenge = get_auth(&request);
+        let uid = get_uid(&request);
         if !Events::CheckAuth(&mut api, uid, challenge) {
             info!("Aquire Task denied due to Invalid Auth");
             return Err(Status::permission_denied("invalid auth"));
@@ -114,8 +114,8 @@ impl Engine for EngineService {
         request: tonic::Request<proto::Task>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
-        let challenge = get_auth!(request);
-        let uid = get_uid!(request);
+        let challenge = get_auth(&request);
+        let uid = get_uid(&request);
         if !Events::CheckAuth(&mut api, uid, challenge) {
             info!("Create Task denied due to Invalid Auth");
             return Err(Status::permission_denied("invalid auth"));
