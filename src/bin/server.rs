@@ -130,11 +130,6 @@ fn check_cgrpc_auth(req: Request<()>) -> Result<(), Status> {
     // trigger check_auth event
     Err(Status::unauthenticated("No valid auth Token"))
 }
-fn check_task_auth(req: Request<()>) -> Result<(), Status> {
-    // trigger check_auth event
-    Events::AuthEvent(api, handler_id, payload, output);
-    Err(Status::unauthenticated("No valid auth Token"))
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
