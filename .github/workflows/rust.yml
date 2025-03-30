@@ -22,6 +22,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
     #- uses: Swatinem/rust-cache@v2
     - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
     - name: Build
