@@ -7,6 +7,7 @@ use crate::{Identifier, Registry};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument, warn};
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct StoredTask {
     bytes: Vec<u8>,
@@ -18,13 +19,16 @@ pub struct StoredExecutingTask {
     given_at: DateTime<Utc>,
 }
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TaskQueueStorage {
+pub struct TaskQueue {
     pub tasks: HashMap<Identifier, Vec<StoredTask>>,
 }
-
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct ExecutingTasks {
-    pub tasks: HashMap<Identifier, StoredExecutingTask>,
+pub struct SolvedTasks {
+    pub tasks: HashMap<Identifier, Vec<StoredTask>>,
+}
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct ExecutingTaskQueue {
+    pub tasks: HashMap<Identifier, Vec<StoredExecutingTask>>,
 }
 pub trait Task: Debug + Sync + Send {
     fn get_id(&self) -> Identifier;

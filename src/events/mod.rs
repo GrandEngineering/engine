@@ -50,9 +50,7 @@ impl Events {
     }
     pub fn init(api: &mut EngineAPI) {
         for (id, tsk) in api.task_registry.tasks.iter() {
-            api.task_queue
-                .tasks
-                .insert(id.clone(), Arc::new(Mutex::new(Vec::new())));
+            api.task_queue.tasks.insert(id.clone(), Vec::new());
         }
         crate::register_event!(
             api,
