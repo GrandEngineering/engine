@@ -1,8 +1,5 @@
 use tonic::Request;
 
-#[macro_use]
-pub mod macros;
-
 pub fn get_uid<T>(req: &Request<T>) -> String {
     let out = req.metadata().get("uid");
     if let Some(out) = out {
