@@ -11,7 +11,6 @@ use super::{Events, ID};
 pub struct AuthEvent {
     pub cancelled: bool,
     pub id: Identifier,
-    pub handler_id: Identifier,
     pub payload: Option<String>,
     pub output: Arc<RwLock<bool>>,
 }
@@ -28,30 +27,19 @@ macro_rules! RegisterAuthEventHandler {
         }
         impl EventCTX<CgrpcEvent> for $handler {
             fn handleCTX(&self, event: &mut CgrpcEvent) {
-                let id: (String, String) = (
-                    stringify!($handler_mod_id).to_string(),
-                    stringify!($handler_id).to_string(),
-                );
-                if (id == event.handler_id) {
-                    $handler_fn(event)
-                }
+                $handler_fn(event)
             }
         }
     };
 }
 impl Events {
-    pub fn AuthEvent(
-        api: &mut EngineAPI,
-        handler_id: Identifier,
-        payload: Option<String>,
-        output: Arc<RwLock<bool>>,
-    ) {
+    pub fn AuthEvent(api: &mut EngineAPI, payload: Option<String>, output: Arc<RwLock<bool>>) {
         api.event_bus.handle(
             ID("core", "auth_event"),
             &mut AuthEvent {
                 cancelled: false,
                 id: ID("core", "auth_event"),
-                handler_id,
+
                 payload,
                 output,
             },
