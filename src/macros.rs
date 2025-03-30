@@ -10,7 +10,7 @@ macro_rules! register_event {
 }
 
 #[macro_export]
-macro_rules! CheckAuth {
+macro_rules! CheckAdminAuth {
     () => {
         let mut api = self.EngineAPI.write().await;
         let payload = request
@@ -26,7 +26,7 @@ macro_rules! CheckAuth {
     };
 }
 #[macro_export]
-macro_rules! CheckAdmingAuth {
+macro_rules! CheckAuth {
     () => {};
 }
 
