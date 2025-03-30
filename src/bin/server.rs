@@ -129,11 +129,6 @@ impl Engine for EngineService {
     }
 }
 
-fn check_cgrpc_auth(req: Request<()>) -> Result<(), Status> {
-    // trigger check_auth event
-    Err(Status::unauthenticated("No valid auth Token"))
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut api = EngineAPI::default();
