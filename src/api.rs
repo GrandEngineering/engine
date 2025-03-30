@@ -77,7 +77,8 @@ impl EngineAPI {
     fn init_db(api: &mut EngineAPI) {
         let tasks = api.db.get("tasks");
         let exec_tasks = api.db.get("executing_tasks");
-        if tasks.is_err() {
+        let solved_tasks = api.db.get("solved_tasks");
+        if tasks.is_err() || tasks.unwrap().is_none() {
             let store = bincode::serialize(&api.task_queue.clone()).unwrap();
             api.db.insert("tasks", store).unwrap();
         } else {
@@ -85,13 +86,21 @@ impl EngineAPI {
             let res: TaskQueue = bincode::deserialize(&store).unwrap();
             api.task_queue = res;
         }
-        if exec_tasks.is_err() {
+        if exec_tasks.is_err() || exec_tasks.unwrap().is_none() {
             let store = bincode::serialize(&api.executing_tasks.clone()).unwrap();
             api.db.insert("executing_tasks", store).unwrap();
         } else {
             let store = api.db.get("executing_tasks").unwrap().unwrap();
             let res: ExecutingTaskQueue = bincode::deserialize(&store).unwrap();
             api.executing_tasks = res;
+        };
+        if solved_tasks.is_err() || solved_tasks.unwrap().is_none() {
+            let store = bincode::serialize(&api.solved_tasks.clone()).unwrap();
+            api.db.insert("solved_tasks", store).unwrap();
+        } else {
+            let store = api.db.get("solved_tasks").unwrap().unwrap();
+            let res: SolvedTasks = bincode::deserialize(&store).unwrap();
+            api.solved_tasks = res;
         };
     }
     pub fn init_dev(api: &mut Self) {
