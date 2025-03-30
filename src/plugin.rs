@@ -116,7 +116,7 @@ impl LibraryManager {
         } else {
             error!("Invalid library path for module: {}", path);
         }
-        std::mem::forget(fs);
+        //std::mem::forget(fs);
     }
 
     pub fn load_library(&mut self, path: &str, api: &mut EngineAPI) -> Result<(), String> {
