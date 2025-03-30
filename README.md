@@ -1,4 +1,4 @@
-# GE Engine
+# GE Engine [![Rust](https://github.com/GrandEngineering/engine/actions/workflows/rust.yml/badge.svg)](https://github.com/GrandEngineering/engine/actions/workflows/rust.yml)
 A blazingly fast distrubted computing project made with Rust and Tonic.
 
 ## Modding
