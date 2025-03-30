@@ -3,7 +3,7 @@ use engine::get_auth;
 use enginelib::{
     Identifier, RawIdentier, Registry,
     api::EngineAPI,
-    event::debug,
+    event::{debug, info},
     events::{self, Events, ID},
     plugin::LibraryManager,
     task::{Task, TaskQueue, TaskQueueStorage},
@@ -60,7 +60,10 @@ impl Engine for EngineService {
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
         let payload = get_auth!(request);
-        Events::CheckAuth(&mut api, payload);
+        if !Events::CheckAuth(&mut api, payload) {
+            info!("Aquire Task Reg denied due to Invalid Auth");
+            return Err(Status::permission_denied("invalid auth"));
+        };
         let mut tasks: Vec<RawIdentier> = Vec::new();
         for (k, v) in &self.EngineAPI.read().await.task_registry.tasks {
             let js: Vec<String> = vec![k.0.clone(), k.1.clone()];
@@ -77,7 +80,10 @@ impl Engine for EngineService {
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
         let payload = get_auth!(request);
-        Events::CheckAuth(&mut api, payload);
+        if !Events::CheckAuth(&mut api, payload) {
+            info!("Aquire Task denied due to Invalid Auth");
+            return Err(Status::permission_denied("invalid auth"));
+        };
         // Todo: check for wrong input to not cause a Panic out of bounds.
         let input = request.get_ref();
         println!("Got a request {:?}", input);
@@ -106,7 +112,10 @@ impl Engine for EngineService {
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
         let payload = get_auth!(request);
-        Events::CheckAuth(&mut api, payload);
+        if !Events::CheckAuth(&mut api, payload) {
+            info!("Create Task denied due to Invalid Auth");
+            return Err(Status::permission_denied("invalid auth"));
+        };
         let task = request.get_ref();
         let task_id = task.task_id.clone();
         let id: Identifier = (
