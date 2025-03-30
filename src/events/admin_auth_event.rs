@@ -12,6 +12,7 @@ pub struct AdminAuthEvent {
     pub cancelled: bool,
     pub id: Identifier,
     pub payload: String,
+    pub target: Identifier,
     pub output: Arc<RwLock<bool>>,
 }
 #[macro_export]
@@ -65,12 +66,17 @@ macro_rules! RegisterAdminAuthEventHandler {
     };
 }
 impl Events {
-    pub fn CheckAdminAuth(api: &mut EngineAPI, payload: String) -> bool {
+    pub fn CheckAdminAuth(api: &mut EngineAPI, payload: String, target: Identifier) -> bool {
         let output = Arc::new(RwLock::new(false));
-        Self::AdminAuthEvent(api, payload, output.clone());
+        Self::AdminAuthEvent(api, payload, target, output.clone());
         return *output.read().unwrap();
     }
-    pub fn AdminAuthEvent(api: &mut EngineAPI, payload: String, output: Arc<RwLock<bool>>) {
+    pub fn AdminAuthEvent(
+        api: &mut EngineAPI,
+        payload: String,
+        target: Identifier,
+        output: Arc<RwLock<bool>>,
+    ) {
         api.event_bus.handle(
             ID("core", "admin_auth_event"),
             &mut AdminAuthEvent {
@@ -78,6 +84,7 @@ impl Events {
                 id: ID("core", "admin_auth_event"),
                 payload,
                 output,
+                target,
             },
         );
     }
