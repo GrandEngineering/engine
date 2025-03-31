@@ -1,4 +1,7 @@
-use tracing::{Level, debug};
+use chrono::{Timelike, Utc};
+use sled::Db;
+use tokio::time::{interval, sleep};
+use tracing::{Level, debug, error, info};
 
 use crate::{
     Identifier, Registry,
@@ -6,11 +9,11 @@ use crate::{
     event::{EngineEventHandlerRegistry, EngineEventRegistry, EventBus},
     events::Events,
     plugin::LibraryManager,
-    task::{ExecutingTaskQueue, SolvedTasks, Task, TaskQueue},
+    task::{ExecutingTaskQueue, SolvedTasks, StoredTask, Task, TaskQueue},
 };
 pub use bincode::deserialize;
 pub use bincode::serialize;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 pub struct EngineAPI {
     pub cfg: Config,
     pub task_queue: TaskQueue,
@@ -147,5 +150,75 @@ impl Registry<dyn Task> for EngineTaskRegistry {
 
     fn get(&self, identifier: &Identifier) -> Option<Box<dyn Task>> {
         self.tasks.get(identifier).map(|obj| obj.clone_box())
+    }
+}
+
+async fn clear_sled_periodically(db: Arc<Db>, n_minutes: u64) {
+    let mut interval = interval(Duration::from_secs(n_minutes * 60));
+
+    loop {
+        interval.tick().await; // Wait for the interval
+        let now = Utc::now().timestamp(); // Current timestamp in seconds
+        let mut moved_tasks: Vec<(String, String, StoredTask)> = Vec::new();
+
+        // Load "executing_tasks"
+        if let Ok(Some(tsks)) = db.get("executing_tasks") {
+            if let Ok(mut s) = bincode::deserialize::<ExecutingTaskQueue>(&tsks) {
+                for ((key1, key2), task_list) in s.tasks.iter_mut() {
+                    task_list.retain(|info| {
+                        let age = now - info.given_at.timestamp();
+                        if age > 3600 {
+                            info!("Task {:?} is older than an hour! Moving...", info);
+                            moved_tasks.push((
+                                key1.clone(),
+                                key2.clone(),
+                                StoredTask {
+                                    bytes: info.bytes.clone(),
+                                },
+                            ));
+                            false // Remove old tasks
+                        } else {
+                            true // Keep tasks that are less than an hour old
+                        }
+                    });
+                }
+
+                // Save updated "executing_tasks"
+                if let Ok(updated) = bincode::serialize(&s) {
+                    if let Err(e) = db.insert("executing_tasks", updated) {
+                        error!("Failed to update executing_tasks in Sled: {:?}", e);
+                    }
+                }
+            }
+        }
+
+        // Merge moved tasks into "tasks"
+        if !moved_tasks.is_empty() {
+            let mut saved_tasks = TaskQueue {
+                tasks: HashMap::new(),
+            };
+
+            if let Ok(Some(saved_tsks)) = db.get("tasks") {
+                if let Ok(existing_tasks) = bincode::deserialize::<TaskQueue>(&saved_tsks) {
+                    saved_tasks = existing_tasks;
+                }
+            }
+
+            // Add moved tasks
+            for (key1, key2, task) in moved_tasks {
+                saved_tasks
+                    .tasks
+                    .entry((key1, key2))
+                    .or_default()
+                    .push(task);
+            }
+
+            // Save updated "tasks" queue
+            if let Ok(updated) = bincode::serialize(&saved_tasks) {
+                if let Err(e) = db.insert("tasks", updated) {
+                    error!("Failed to update tasks in Sled: {:?}", e);
+                }
+            }
+        }
     }
 }
