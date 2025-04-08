@@ -173,6 +173,7 @@ async fn clear_sled_periodically(db: Arc<Db>, n_minutes: u64) {
                                 key1.clone(),
                                 key2.clone(),
                                 StoredTask {
+                                    id: info.id.clone(),
                                     bytes: info.bytes.clone(),
                                 },
                             ));

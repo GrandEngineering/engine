@@ -11,10 +11,12 @@ use tracing::{error, instrument, warn};
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct StoredTask {
     pub bytes: Vec<u8>,
+    pub id: String,
 }
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct StoredExecutingTask {
     pub bytes: Vec<u8>,
+    pub id: String,
     pub user_id: String,
     pub given_at: DateTime<Utc>,
 }

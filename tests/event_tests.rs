@@ -208,7 +208,10 @@ fn test_task_serialization() {
 
     // Test serialization and deserialization
     let serialized = task.to_bytes();
-    let stored_task = StoredTask { bytes: serialized };
+    let stored_task = StoredTask {
+        bytes: serialized,
+        id: "id".into(),
+    };
 
     // Deserialize
     let deserialized_task: TestTask = bincode::deserialize(&stored_task.bytes).unwrap();
