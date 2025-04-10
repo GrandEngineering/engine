@@ -32,7 +32,7 @@ pub struct EngineAPI {
 impl Default for EngineAPI {
     fn default() -> Self {
         Self {
-            cfg: Config::new(),
+            cfg: Config::default(),
             task_queue: TaskQueue::default(),
             db: sled::open("engine_db").unwrap(),
             lib_manager: LibraryManager::default(),
@@ -76,6 +76,7 @@ impl EngineAPI {
     }
     pub fn init(api: &mut Self) {
         Self::setup_logger();
+        api.cfg = Config::new();
         Self::init_db(api);
         Events::init(api);
         let mut newLibManager = LibraryManager::default();

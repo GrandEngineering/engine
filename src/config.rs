@@ -18,7 +18,7 @@ impl Default for ConfigTomlServer {
         }
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Config {
     pub config_toml: ConfigTomlServer,
 }
