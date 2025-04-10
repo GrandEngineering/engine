@@ -1,6 +1,7 @@
 use chrono::{Timelike, Utc};
 use sled::Db;
 use tokio::{
+    spawn,
     sync::RwLock,
     time::{interval, sleep},
 };
@@ -80,6 +81,10 @@ impl EngineAPI {
         let mut newLibManager = LibraryManager::default();
         newLibManager.load_modules(api);
         api.lib_manager = newLibManager;
+    }
+    pub fn init_chron(api: Arc<RwLock<Self>>) {
+        let t = api.try_read().unwrap().cfg.config_toml.clean_tasks;
+        spawn(clear_sled_periodically(api, t));
     }
     fn init_db(api: &mut EngineAPI) {
         let tasks = api.db.get("tasks");
