@@ -167,6 +167,7 @@ pub async fn clear_sled_periodically(api: Arc<RwLock<EngineAPI>>, n_minutes: u64
     let mut interval = interval(Duration::from_secs(n_minutes * 60));
     loop {
         interval.tick().await; // Wait for the interval
+        info!("Purging Unsolved Tasks");
         let now = Utc::now().timestamp(); // Current timestamp in seconds
         let mut moved_tasks: Vec<(String, String, StoredTask)> = Vec::new();
         let mut rw_api = api.write().await;
