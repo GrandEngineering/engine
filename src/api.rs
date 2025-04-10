@@ -1,6 +1,9 @@
 use chrono::{Timelike, Utc};
 use sled::Db;
-use tokio::time::{interval, sleep};
+use tokio::{
+    sync::RwLock,
+    time::{interval, sleep},
+};
 use tracing::{Level, debug, error, info};
 
 use crate::{
@@ -78,7 +81,6 @@ impl EngineAPI {
         newLibManager.load_modules(api);
         api.lib_manager = newLibManager;
     }
-
     fn init_db(api: &mut EngineAPI) {
         let tasks = api.db.get("tasks");
         let exec_tasks = api.db.get("executing_tasks");
@@ -153,14 +155,14 @@ impl Registry<dyn Task> for EngineTaskRegistry {
     }
 }
 
-async fn clear_sled_periodically(db: Arc<Db>, n_minutes: u64) {
+pub async fn clear_sled_periodically(api: Arc<RwLock<EngineAPI>>, n_minutes: u64) {
     let mut interval = interval(Duration::from_secs(n_minutes * 60));
-
     loop {
         interval.tick().await; // Wait for the interval
         let now = Utc::now().timestamp(); // Current timestamp in seconds
         let mut moved_tasks: Vec<(String, String, StoredTask)> = Vec::new();
-
+        let mut rw_api = api.write().await;
+        let db = rw_api.db.clone();
         // Load "executing_tasks"
         if let Ok(Some(tsks)) = db.get("executing_tasks") {
             if let Ok(mut s) = bincode::deserialize::<ExecutingTaskQueue>(&tsks) {
@@ -221,5 +223,6 @@ async fn clear_sled_periodically(db: Arc<Db>, n_minutes: u64) {
                 }
             }
         }
+        EngineAPI::init_db(&mut rw_api);
     }
 }
