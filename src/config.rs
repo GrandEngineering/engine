@@ -6,12 +6,14 @@ use serde::{Deserialize, Serialize};
 pub struct ConfigTomlServer {
     pub cgrpc_token: Option<String>, // Administrator Token, used to invoke cgrpc reqs. If not preset will default to no protection.
     pub port: String,
+    pub clean_tasks: u64,
 }
 impl Default for ConfigTomlServer {
     fn default() -> Self {
         Self {
             port: "[::1]:50051".into(),
             cgrpc_token: None,
+            clean_tasks: 60,
         }
     }
 }
