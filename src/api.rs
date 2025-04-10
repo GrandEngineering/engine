@@ -162,6 +162,8 @@ impl Registry<dyn Task> for EngineTaskRegistry {
 }
 
 pub async fn clear_sled_periodically(api: Arc<RwLock<EngineAPI>>, n_minutes: u64) {
+    EngineAPI::setup_logger();
+    info!("Sled Cron Job Started");
     let mut interval = interval(Duration::from_secs(n_minutes * 60));
     loop {
         interval.tick().await; // Wait for the interval
