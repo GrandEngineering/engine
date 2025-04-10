@@ -115,7 +115,8 @@ impl Engine for EngineService {
             .get(&ID(namespace, task_name))
             .unwrap()
             .clone();
-        let task_payload = map.first().unwrap().bytes.clone();
+        let ttask = map.first().unwrap().clone();
+        let task_payload = ttask.bytes.clone();
         map.remove(0);
         // Get Task and remove it from queue
         api.task_queue.tasks.insert(ID(namespace, task_name), map);
@@ -132,6 +133,7 @@ impl Engine for EngineService {
             bytes: task_payload.clone(),
             user_id: uid.clone(),
             given_at: Utc::now(),
+            id: ttask.id,
         });
         api.executing_tasks
             .tasks
@@ -186,9 +188,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Events::init_auth(&mut api);
     Events::StartEvent(&mut api);
     let addr = api.cfg.config_toml.port.parse().unwrap();
-    let engine = EngineService {
-        EngineAPI: Arc::new(RwLock::new(api)),
-    };
+    let apii = Arc::new(RwLock::new(api));
+    EngineAPI::init_chron(apii.clone());
+    let engine = EngineService { EngineAPI: apii };
 
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
