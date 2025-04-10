@@ -1,8 +1,9 @@
 use std::{fs, io::Error};
 
 use serde::{Deserialize, Serialize};
+use tracing::{error, instrument};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConfigTomlServer {
     pub cgrpc_token: Option<String>, // Administrator Token, used to invoke cgrpc reqs. If not preset will default to no protection.
     pub port: String,
@@ -17,11 +18,14 @@ impl Default for ConfigTomlServer {
         }
     }
 }
+#[derive(Debug, Clone)]
 pub struct Config {
     pub config_toml: ConfigTomlServer,
 }
+
 impl Config {
     #[allow(clippy::new_without_default)]
+    #[instrument]
     pub fn new() -> Self {
         let mut content: String = "".to_owned();
         let result: Result<String, Error> = fs::read_to_string("config.toml");
@@ -29,8 +33,8 @@ impl Config {
             content = result.unwrap();
         };
         let config_toml: ConfigTomlServer = toml::from_str(&content).unwrap_or_else(|err| {
-            println!("Failed to parse config file.");
-            println!("{:#?}", err);
+            error!("Failed to parse config file.");
+            error!("{:#?}", err);
             ConfigTomlServer::default()
         });
         Self { config_toml }
