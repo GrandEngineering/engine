@@ -4,7 +4,7 @@ use enginelib::{
     Identifier, RawIdentier, Registry,
     api::EngineAPI,
     chrono::Utc,
-    event::{debug, info},
+    event::{debug, info, warn},
     events::{self, Events, ID},
     plugin::LibraryManager,
     task::{Task, TaskQueue},
@@ -33,9 +33,15 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Cgrpcmsg>,
     ) -> std::result::Result<tonic::Response<proto::Cgrpcmsg>, tonic::Status> {
+        info!(
+            "CGRPC request received for handler: {}:{}",
+            request.get_ref().handler_mod_id,
+            request.get_ref().handler_id
+        );
         let mut api = self.EngineAPI.write().await;
         let challenge = get_auth(&request);
         let db = api.db.clone();
+        debug!("Checking admin authentication for CGRPC request");
         let output = Events::CheckAdminAuth(
             &mut api,
             challenge,
@@ -46,9 +52,11 @@ impl Engine for EngineService {
             db,
         );
         if !output {
+            warn!("CGRPC auth check failed - permission denied");
             return Err(tonic::Status::permission_denied("Invalid CGRPC Auth"));
         };
-        let mut out = Arc::new(std::sync::RwLock::new(Vec::new()));
+        let out = Arc::new(std::sync::RwLock::new(Vec::new()));
+        debug!("Dispatching CGRPC event to handler");
         Events::CgrpcEvent(
             &mut api,
             ID("engine_core", "grpc"),
@@ -57,19 +65,26 @@ impl Engine for EngineService {
         );
         let mut res = request.get_ref().clone();
         res.event_payload = out.read().unwrap().clone();
+        info!("CGRPC request processed successfully");
         return Ok(tonic::Response::new(res));
     }
     async fn aquire_task_reg(
         &self,
         request: tonic::Request<proto::Empty>,
     ) -> Result<tonic::Response<proto::TaskRegistry>, tonic::Status> {
+        let uid = get_uid(&request);
+        let challenge = get_auth(&request);
+        info!("Task registry request received from user: {}", uid);
         let mut api = self.EngineAPI.write().await;
         let db = api.db.clone();
-        let challenge = get_auth(&request);
-        let uid = get_uid(&request);
-        if !Events::CheckAuth(&mut api, uid, challenge, db) {
-            info!("Aquire Task Reg denied due to Invalid Auth");
-            return Err(Status::permission_denied("invalid auth"));
+
+        debug!("Validating authentication for task registry request");
+        if !Events::CheckAuth(&mut api, uid.clone(), challenge, db) {
+            info!(
+                "Task registry request denied - invalid authentication for user: {}",
+                uid
+            );
+            return Err(Status::permission_denied("Invalid authentication"));
         };
         let mut tasks: Vec<RawIdentier> = Vec::new();
         for (k, v) in &api.task_registry.tasks {
@@ -77,6 +92,7 @@ impl Engine for EngineService {
             let jstr = js.join(":");
             tasks.push(jstr);
         }
+        info!("Returning task registry with {} tasks", tasks.len());
         let response = proto::TaskRegistry { tasks };
         Ok(tonic::Response::new(response))
     }
