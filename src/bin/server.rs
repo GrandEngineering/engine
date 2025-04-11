@@ -147,6 +147,12 @@ impl Engine for EngineService {
         };
         Ok(tonic::Response::new(response))
     }
+    async fn publish_task(
+        &self,
+        request: tonic::Request<proto::Task>,
+    ) -> Result<tonic::Response<proto::Empty>, tonic::Status> {
+        Err(tonic::Status::ok("message"))
+    }
     async fn create_task(
         &self,
         request: tonic::Request<proto::Task>,
