@@ -133,7 +133,7 @@ impl Engine for EngineService {
             bytes: task_payload.clone(),
             user_id: uid.clone(),
             given_at: Utc::now(),
-            id: ttask.id,
+            id: ttask.id.clone(),
         });
         api.executing_tasks
             .tasks
@@ -141,6 +141,7 @@ impl Engine for EngineService {
         let store = bincode::serialize(&api.executing_tasks.clone()).unwrap();
         api.db.insert("executing_tasks", store).unwrap();
         let response = proto::Task {
+            id: ttask.id,
             task_id: input.task_id.clone(),
             task_payload,
             payload: Vec::new(),
@@ -151,6 +152,47 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::Task>,
     ) -> Result<tonic::Response<proto::Empty>, tonic::Status> {
+        let mut api = self.EngineAPI.write().await;
+        let challenge = get_auth(&request);
+        let uid = get_uid(&request);
+        let db = api.db.clone();
+
+        let task_id = request.get_ref().task_id.clone();
+        let alen = &task_id.split(":").collect::<Vec<&str>>().len();
+        if *alen != 2 {
+            return Err(Status::invalid_argument("Invalid Params"));
+        }
+        let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
+        let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
+
+        if !Events::CheckAuth(&mut api, uid.clone(), challenge, db) {
+            info!("Aquire Task denied due to Invalid Auth");
+            return Err(Status::permission_denied("invalid auth"));
+        };
+        let mem_tsk = api
+            .executing_tasks
+            .tasks
+            .get(&ID(namespace, task_name))
+            .unwrap();
+        let tsk = mem_tsk
+            .iter()
+            .find(|f| f.id == task_id.clone() && f.user_id == uid.clone());
+        if let Some(tsk) = tsk {
+            // Exec Tasks -> DB
+            let mut nmem_tsk = mem_tsk.clone();
+            nmem_tsk.retain(|f| f.id != task_id.clone() && f.user_id != uid.clone());
+            api.executing_tasks
+                .tasks
+                .insert(ID(namespace, task_name), nmem_tsk.clone());
+            let t_mem_execs = api.executing_tasks.clone();
+            api.db
+                .insert("executing_tasks", bincode::serialize(&t_mem_execs).unwrap())
+                .unwrap();
+            // tsk-> solved Tsks
+            // Solved tsks -> DB
+        } else {
+            return Err(tonic::Status::not_found("Invalid taskid or userid"));
+        }
         Err(tonic::Status::ok("message"))
     }
     async fn create_task(

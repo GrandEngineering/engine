@@ -26,6 +26,7 @@ message TaskRequest {
   // bytes payload = 2;
 }
 message Task {
+  string id = 4; // the task unique identifier
   bytes task_payload = 1;
   string task_id = 2; // namespace:task
   bytes payload = 3;
