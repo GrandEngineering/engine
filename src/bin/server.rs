@@ -173,7 +173,8 @@ impl Engine for EngineService {
             .executing_tasks
             .tasks
             .get(&ID(namespace, task_name))
-            .unwrap();
+            .unwrap()
+            .clone();
         let tsk = mem_tsk
             .iter()
             .find(|f| f.id == task_id.clone() && f.user_id == uid.clone());
@@ -189,7 +190,22 @@ impl Engine for EngineService {
                 .insert("executing_tasks", bincode::serialize(&t_mem_execs).unwrap())
                 .unwrap();
             // tsk-> solved Tsks
+            let mut mem_solv = api
+                .solved_tasks
+                .tasks
+                .get(&ID(namespace, task_name))
+                .unwrap()
+                .clone();
+            mem_solv.push(enginelib::task::StoredTask {
+                bytes: tsk.bytes.clone(),
+                id: tsk.id.clone(),
+            });
+            api.solved_tasks
+                .tasks
+                .insert(ID(namespace, task_name), mem_solv);
             // Solved tsks -> DB
+            let e_solv = bincode::serialize(&api.solved_tasks.tasks).unwrap();
+            api.db.insert("solved_tasks", e_solv).unwrap();
         } else {
             return Err(tonic::Status::not_found("Invalid taskid or userid"));
         }
