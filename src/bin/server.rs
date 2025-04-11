@@ -101,28 +101,45 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::TaskRequest>,
     ) -> Result<tonic::Response<proto::Task>, tonic::Status> {
-        let mut api = self.EngineAPI.write().await;
         let challenge = get_auth(&request);
+        let input = request.get_ref();
+        let task_id = input.task_id.clone();
         let uid = get_uid(&request);
+        info!(
+            "Task acquisition request received from user: {} for task: {}",
+            uid, task_id
+        );
+
+        let mut api = self.EngineAPI.write().await;
         let db = api.db.clone();
+        debug!("Validating authentication for task acquisition");
         if !Events::CheckAuth(&mut api, uid.clone(), challenge, db) {
-            info!("Aquire Task denied due to Invalid Auth");
-            return Err(Status::permission_denied("invalid auth"));
+            info!(
+                "Task acquisition denied - invalid authentication for user: {}",
+                uid
+            );
+            return Err(Status::permission_denied("Invalid authentication"));
         };
 
         // Todo: check for wrong input to not cause a Panic out of bounds.
-        let input = request.get_ref();
-        let task_id = input.task_id.clone();
         let alen = &task_id.split(":").collect::<Vec<&str>>().len();
         if *alen != 2 {
-            return Err(Status::invalid_argument("Invalid Params"));
+            info!("Invalid task ID format: {}", task_id);
+            return Err(Status::invalid_argument(
+                "Invalid task ID format, expected 'namespace:name",
+            ));
         }
         let namespace = &task_id.split(":").collect::<Vec<&str>>()[0];
         let task_name = &task_id.split(":").collect::<Vec<&str>>()[1];
+        debug!("Looking up task definition for {}:{}", namespace, task_name);
         let tsx = api
             .task_registry
             .get(&(namespace.to_string(), task_name.to_string()));
         if tsx.is_none() {
+            warn!(
+                "Task acquisition failed - task does not exist: {}:{}",
+                namespace, task_name
+            );
             return Err(Status::invalid_argument("Task Does not Exist"));
         }
         let mut map = api
@@ -222,10 +239,11 @@ impl Engine for EngineService {
             // Solved tsks -> DB
             let e_solv = bincode::serialize(&api.solved_tasks.tasks).unwrap();
             api.db.insert("solved_tasks", e_solv).unwrap();
+            info!("Task published successfully: {} by user: {}", task_id, uid);
+            return Ok(tonic::Response::new(proto::Empty {}));
         } else {
             return Err(tonic::Status::not_found("Invalid taskid or userid"));
         }
-        Err(tonic::Status::ok("message"))
     }
     async fn create_task(
         &self,
