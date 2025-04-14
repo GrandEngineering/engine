@@ -71,6 +71,8 @@ enum Commands {
     Pack(PackArgs),
     #[command()]
     Unpack(PackArgs),
+    #[command()]
+    Schema(),
 }
 #[derive(Args, Debug, PartialEq)]
 struct PackArgs {
@@ -100,6 +102,17 @@ async fn main() {
     }
     if let Some(command) = cli.command {
         match command {
+            Commands::Schema() => {
+                let mut buf: Vec<String> = Vec::new();
+                for tsk in api.task_registry.tasks {
+                    let unw = tsk.1.to_toml();
+                    buf.push(format![r#"[["{}:{}"]]"#, tsk.0.0, tsk.0.1]);
+                    buf.push(unw);
+                }
+                let ns = buf.join("\n");
+                let mut file = File::create("schema.rustforge.toml").unwrap();
+                file.write_all(ns.as_bytes()).unwrap();
+            }
             Commands::Unpack(input) => {
                 if input.input.exists() {
                     let mut final_out: Vec<String> = Vec::new();
