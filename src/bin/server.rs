@@ -202,11 +202,10 @@ impl Engine for EngineService {
             info!("Aquire Task denied due to Invalid Auth");
             return Err(Status::permission_denied("Invalid authentication"));
         };
-        if api
+        if !api
             .task_registry
             .tasks
-            .get(&ID(namespace, task_name))
-            .is_none()
+            .contains_key(&ID(namespace, task_name))
         {
             warn!(
                 "Task acquisition failed - task does not exist: {}:{}",
@@ -285,7 +284,7 @@ impl Engine for EngineService {
             task_id.split(":").collect::<Vec<&str>>()[0].to_string(),
             task_id.split(":").collect::<Vec<&str>>()[1].to_string(),
         );
-        let tsk_reg = self.EngineAPI.read().await.task_registry.get(&id);
+        let tsk_reg = api.task_registry.get(&id);
         if let Some(tsk_reg) = tsk_reg {
             if !tsk_reg.clone().verify(task.task_payload.clone()) {
                 warn!("Failed to parse given task bytes");
