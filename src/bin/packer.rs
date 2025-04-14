@@ -6,15 +6,15 @@ use enginelib::events::ID;
 // For coloring the output
 use enginelib::Registry;
 use enginelib::prelude::error;
-use enginelib::task::{StoredTask, Task};
+use enginelib::task::{StoredTask, Task, TaskQueue};
 use enginelib::{api::EngineAPI, event::info};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::fs::File;
-use std::io;
 use std::io::Write;
+use std::io::{self, Read};
 use std::path::PathBuf;
 use toml::Value;
 
@@ -69,6 +69,8 @@ struct Cli {
 enum Commands {
     #[command()]
     Pack(PackArgs),
+    #[command()]
+    Unpack(PackArgs),
 }
 #[derive(Args, Debug, PartialEq)]
 struct PackArgs {
@@ -93,11 +95,45 @@ async fn main() {
     }
     let mut api = EngineAPI::default();
     EngineAPI::init_packer(&mut api);
+    for (id, tsk) in api.task_registry.tasks.iter() {
+        api.task_queue.tasks.entry(id.clone()).or_default();
+    }
     if let Some(command) = cli.command {
         match command {
+            Commands::Unpack(input) => {
+                if input.input.exists() {
+                    let mut final_out: Vec<String> = Vec::new();
+                    info!("Unpacking File: {}", input.input.to_string_lossy());
+                    let mut buf = Vec::new();
+                    File::open(input.input)
+                        .unwrap()
+                        .read_to_end(&mut buf)
+                        .unwrap();
+                    let k: TaskQueue = bincode::deserialize(&buf).unwrap();
+                    for tasks in k.tasks {
+                        let tt = api.task_registry.tasks.get(&tasks.0.clone()).unwrap();
+                        for task in tasks.1 {
+                            if tt.verify(task.bytes.clone()) {
+                                let tmp_nt = tt.from_bytes(&task.bytes);
+                                final_out.push(format![
+                                    r#"[["{}:{}"]]"#,
+                                    tasks.0.0.clone(),
+                                    tasks.0.1.clone()
+                                ]);
+                                final_out.push(tmp_nt.to_toml());
+                                info!("{:?}", tmp_nt)
+                                //todo write to file
+                            };
+                        }
+                    }
+                    for s in final_out {
+                        println!("{s}");
+                    }
+                }
+            }
             Commands::Pack(input) => {
                 if input.input.exists() {
-                    info!("Parsing File: {}", input.input.to_string_lossy());
+                    info!("Packing File: {}", input.input.to_string_lossy());
                     let toml_str = std::fs::read_to_string(input.input).unwrap();
                     let raw: RawDoc = toml::from_str(&toml_str).unwrap();
                     let entries = parse_entries(raw);
@@ -108,14 +144,19 @@ async fn main() {
                             .unwrap();
                         let toml_string = toml::to_string(&entry.data).unwrap();
                         let t = template.from_toml(toml_string);
+                        let mut tmp = api
+                            .task_queue
+                            .tasks
+                            .get(&ID(entry.namespace.as_str(), entry.id.as_str()))
+                            .unwrap()
+                            .clone();
+                        tmp.push(StoredTask {
+                            id: "".into(), //ids are minted on the server
+                            bytes: t.to_bytes(),
+                        });
                         api.task_queue
                             .tasks
-                            .get_mut(&ID(entry.namespace.as_str(), entry.id.as_str()))
-                            .unwrap()
-                            .push(StoredTask {
-                                id: "".into(), //ids are minted on the server
-                                bytes: t.to_bytes(),
-                            });
+                            .insert(ID(entry.namespace.as_str(), entry.id.as_str()), tmp);
                     }
                     let data = bincode::serialize(&api.task_queue).unwrap();
                     let mut file = File::create("output.rustforge.bin").unwrap();
