@@ -72,7 +72,7 @@ enum Commands {
     #[command()]
     Unpack(PackArgs),
     #[command()]
-    Schema(),
+    Schema,
 }
 #[derive(Args, Debug, PartialEq)]
 struct PackArgs {
@@ -102,7 +102,7 @@ async fn main() {
     }
     if let Some(command) = cli.command {
         match command {
-            Commands::Schema() => {
+            Commands::Schema => {
                 let mut buf: Vec<String> = Vec::new();
                 for tsk in api.task_registry.tasks {
                     let unw = tsk.1.to_toml();
