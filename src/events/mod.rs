@@ -50,8 +50,11 @@ impl Events {
     }
     pub fn init(api: &mut EngineAPI) {
         for (id, tsk) in api.task_registry.tasks.iter() {
-            api.task_queue.tasks.insert(id.clone(), Vec::new());
+            api.task_queue.tasks.entry(id.clone()).or_default();
+            api.executing_tasks.tasks.entry(id.clone()).or_default();
+            api.solved_tasks.tasks.entry(id.clone()).or_default();
         }
+
         crate::register_event!(
             api,
             core,

@@ -78,10 +78,10 @@ impl EngineAPI {
         Self::setup_logger();
         api.cfg = Config::new();
         Self::init_db(api);
-        Events::init(api);
         let mut newLibManager = LibraryManager::default();
         newLibManager.load_modules(api);
         api.lib_manager = newLibManager;
+        Events::init(api);
     }
     pub fn init_chron(api: Arc<RwLock<Self>>) {
         let t = api.try_read().unwrap().cfg.config_toml.clean_tasks;
