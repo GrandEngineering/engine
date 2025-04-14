@@ -1,14 +1,18 @@
 use clap::{Args, CommandFactory, Subcommand, ValueHint};
 use clap::{Command, Parser};
 use clap_complete::{Generator, Shell, generate};
-use colored::*; // For coloring the output
+use colored::*;
+use enginelib::events::ID;
+// For coloring the output
+use enginelib::Registry;
 use enginelib::prelude::error;
-use enginelib::task::Task;
+use enginelib::task::{StoredTask, Task};
 use enginelib::{api::EngineAPI, event::info};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::ffi::OsString;
+use std::fs::File;
 use std::io;
 use std::io::Write;
 use std::path::PathBuf;
@@ -98,8 +102,24 @@ async fn main() {
                     let raw: RawDoc = toml::from_str(&toml_str).unwrap();
                     let entries = parse_entries(raw);
                     for entry in entries {
-                        println!("[{}:{}] => {:?}", entry.namespace, entry.id, entry.data);
+                        let template = api
+                            .task_registry
+                            .get(&ID(entry.namespace.as_str(), entry.id.as_str()))
+                            .unwrap();
+                        let toml_string = toml::to_string(&entry.data).unwrap();
+                        let t = template.from_toml(toml_string);
+                        api.task_queue
+                            .tasks
+                            .get_mut(&ID(entry.namespace.as_str(), entry.id.as_str()))
+                            .unwrap()
+                            .push(StoredTask {
+                                id: "".into(), //ids are minted on the server
+                                bytes: t.to_bytes(),
+                            });
                     }
+                    let data = bincode::serialize(&api.task_queue).unwrap();
+                    let mut file = File::create("output.rustforge.bin").unwrap();
+                    file.write_all(&data).unwrap();
                 } else {
                     error!("File does not exist: {}", input.input.to_string_lossy())
                 }
