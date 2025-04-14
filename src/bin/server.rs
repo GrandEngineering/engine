@@ -297,7 +297,7 @@ impl Engine for EngineService {
             };
             let mut mem_tsks = api.task_queue.clone();
             let mut mem_tsk = mem_tsks.tasks.get(&id).unwrap().clone();
-            mem_tsk.push(tbp_tsk);
+            mem_tsk.push(tbp_tsk.clone());
             mem_tsks.tasks.insert(id.clone(), mem_tsk);
             api.task_queue = mem_tsks;
             api.db
@@ -306,6 +306,12 @@ impl Engine for EngineService {
                     bincode::serialize(&api.task_queue.clone()).unwrap(),
                 )
                 .unwrap();
+            return Ok(tonic::Response::new(proto::Task {
+                id: tbp_tsk.id.clone(),
+                task_id: task_id.clone(),
+                payload: Vec::new(),
+                task_payload: tbp_tsk.bytes.clone(),
+            }));
         }
         Err(tonic::Status::aborted("Error"))
     }
