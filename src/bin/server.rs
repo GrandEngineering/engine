@@ -7,7 +7,7 @@ use enginelib::{
     event::{debug, info, warn},
     events::{self, Events, ID},
     plugin::LibraryManager,
-    task::{Task, TaskQueue},
+    task::{StoredTask, Task, TaskQueue},
 };
 use proto::engine_server::{Engine, EngineServer};
 use std::{
@@ -202,6 +202,18 @@ impl Engine for EngineService {
             info!("Aquire Task denied due to Invalid Auth");
             return Err(Status::permission_denied("Invalid authentication"));
         };
+        if api
+            .task_registry
+            .tasks
+            .get(&ID(namespace, task_name))
+            .is_none()
+        {
+            warn!(
+                "Task acquisition failed - task does not exist: {}:{}",
+                namespace, task_name
+            );
+            return Err(Status::invalid_argument("Task Does not Exist"));
+        }
         let mem_tsk = api
             .executing_tasks
             .tasks
@@ -263,6 +275,7 @@ impl Engine for EngineService {
         let uid = get_uid(&request);
         let db = api.db.clone();
         if !Events::CheckAuth(&mut api, uid, challenge, db) {
+            //TODO: change to AdminSpecific Auth
             info!("Create Task denied due to Invalid Auth");
             return Err(Status::permission_denied("Invalid authentication"));
         };
@@ -272,18 +285,28 @@ impl Engine for EngineService {
             task_id.split(":").collect::<Vec<&str>>()[0].to_string(),
             task_id.split(":").collect::<Vec<&str>>()[1].to_string(),
         );
-        let tsk_inst = self.EngineAPI.read().await.task_registry.get(&id).unwrap();
-        let tsk: Box<dyn Task> = tsk_inst.from_bytes(&task.task_payload);
-        // self.EngineAPI
-        //     .write()
-        //     .await
-        //     .task_queue
-        //     .tasks
-        //     .get(&id)
-        //     .unwrap()
-        //     .lock()
-        //     .unwrap()
-        //     .push(tsk);
+        let tsk_reg = self.EngineAPI.read().await.task_registry.get(&id);
+        if let Some(tsk_reg) = tsk_reg {
+            if !tsk_reg.clone().verify(task.task_payload.clone()) {
+                warn!("Failed to parse given task bytes");
+                return Err(Status::invalid_argument("Failed to parse given task bytes"));
+            }
+            let tbp_tsk = StoredTask {
+                bytes: task.task_payload.clone(),
+                id: druid::Druid::default().to_hex(),
+            };
+            let mut mem_tsks = api.task_queue.clone();
+            let mut mem_tsk = mem_tsks.tasks.get(&id).unwrap().clone();
+            mem_tsk.push(tbp_tsk);
+            mem_tsks.tasks.insert(id.clone(), mem_tsk);
+            api.task_queue = mem_tsks;
+            api.db
+                .insert(
+                    "tasks",
+                    bincode::serialize(&api.task_queue.clone()).unwrap(),
+                )
+                .unwrap();
+        }
         Err(tonic::Status::aborted("Error"))
     }
 }
