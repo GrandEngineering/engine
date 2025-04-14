@@ -32,7 +32,11 @@ pub struct SolvedTasks {
 pub struct ExecutingTaskQueue {
     pub tasks: HashMap<Identifier, Vec<StoredExecutingTask>>,
 }
-pub trait Task: Debug + Sync + Send {
+
+pub trait Verifiable {
+    fn verify(&self, b: Vec<u8>) -> bool;
+}
+pub trait Task: Debug + Sync + Send + Verifiable {
     fn get_id(&self) -> Identifier;
     fn clone_box(&self) -> Box<dyn Task>;
     #[instrument]

@@ -6,8 +6,9 @@ use enginelib::{
     },
     events::ID,
     plugin::LibraryManager,
-    task::{SolvedTasks, TaskQueue},
+    task::{SolvedTasks, TaskQueue, Verifiable},
 };
+use macros::Verifiable;
 use sled::Config;
 use std::{any::Any, collections::HashMap, sync::Arc};
 use tracing_test::traced_test;
@@ -90,7 +91,7 @@ fn test_task_registration() {
     use enginelib::task::Task;
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize, Verifiable)]
     struct TestTask {
         pub value: i32,
         pub id: (String, String),
@@ -136,7 +137,7 @@ fn test_task_execution() {
     use enginelib::task::{Runner, Task};
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize, Verifiable)]
     struct TestTask {
         pub value: i32,
         pub id: (String, String),
@@ -177,7 +178,7 @@ fn test_task_serialization() {
     use enginelib::task::{StoredTask, Task};
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize, Verifiable)]
     struct TestTask {
         pub value: i32,
         pub id: (String, String),
