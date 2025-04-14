@@ -113,6 +113,9 @@ fn test_task_registration() {
         fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task> {
             Box::new(bincode::deserialize::<TestTask>(bytes).unwrap())
         }
+        fn from_toml(&self, d: String) -> Box<dyn Task> {
+            return Box::new(self.clone());
+        }
     }
     let mut api = EngineAPI::test_default();
     let task_id = ID("test", "test_task");
@@ -144,6 +147,9 @@ fn test_task_execution() {
     }
 
     impl Task for TestTask {
+        fn from_toml(&self, d: String) -> Box<dyn Task> {
+            return Box::new(self.clone());
+        }
         fn get_id(&self) -> (String, String) {
             self.id.clone()
         }
@@ -185,6 +191,9 @@ fn test_task_serialization() {
     }
 
     impl Task for TestTask {
+        fn from_toml(&self, d: String) -> Box<dyn Task> {
+            return Box::new(self.clone());
+        }
         fn get_id(&self) -> (String, String) {
             self.id.clone()
         }
