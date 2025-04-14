@@ -66,6 +66,7 @@ pub trait Task: Debug + Sync + Send + Verifiable {
     fn to_bytes(&self) -> Vec<u8>;
     #[allow(clippy::wrong_self_convention)]
     fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task>;
+    fn from_toml(&self, d: String) -> Box<dyn Task>;
 }
 
 #[derive(Debug, Clone, Copy)]
