@@ -121,14 +121,13 @@ async fn main() {
                                     tasks.0.1.clone()
                                 ]);
                                 final_out.push(tmp_nt.to_toml());
-                                info!("{:?}", tmp_nt)
-                                //todo write to file
+                                info!("{:?}", tmp_nt);
                             };
                         }
                     }
-                    for s in final_out {
-                        println!("{s}");
-                    }
+                    let ns = final_out.join("\n");
+                    let mut file = File::create("output.rustforge.toml").unwrap();
+                    file.write_all(ns.as_bytes()).unwrap();
                 }
             }
             Commands::Pack(input) => {
