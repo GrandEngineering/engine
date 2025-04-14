@@ -200,7 +200,7 @@ impl Engine for EngineService {
 
         if !Events::CheckAuth(&mut api, uid.clone(), challenge, db) {
             info!("Aquire Task denied due to Invalid Auth");
-            return Err(Status::permission_denied("invalid auth"));
+            return Err(Status::permission_denied("Invalid authentication"));
         };
         let mem_tsk = api
             .executing_tasks
@@ -212,6 +212,15 @@ impl Engine for EngineService {
             .iter()
             .find(|f| f.id == task_id.clone() && f.user_id == uid.clone());
         if let Some(tsk) = tsk {
+            let reg_tsk = api
+                .task_registry
+                .get(&ID(namespace, task_name))
+                .unwrap()
+                .clone();
+            if !reg_tsk.verify(request.get_ref().task_payload.clone()) {
+                info!("Failed to parse task");
+                return Err(Status::invalid_argument("Failed to parse given task bytes"));
+            }
             // Exec Tasks -> DB
             let mut nmem_tsk = mem_tsk.clone();
             nmem_tsk.retain(|f| f.id != task_id.clone() && f.user_id != uid.clone());
@@ -255,7 +264,7 @@ impl Engine for EngineService {
         let db = api.db.clone();
         if !Events::CheckAuth(&mut api, uid, challenge, db) {
             info!("Create Task denied due to Invalid Auth");
-            return Err(Status::permission_denied("invalid auth"));
+            return Err(Status::permission_denied("Invalid authentication"));
         };
         let task = request.get_ref();
         let task_id = task.task_id.clone();
