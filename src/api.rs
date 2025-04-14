@@ -5,7 +5,7 @@ use tokio::{
     sync::RwLock,
     time::{interval, sleep},
 };
-use tracing::{Level, debug, error, info};
+use tracing::{Level, debug, error, info, instrument};
 
 use crate::{
     Identifier, Registry,
@@ -147,6 +147,7 @@ pub struct EngineTaskRegistry {
     pub tasks: HashMap<Identifier, Arc<dyn Task>>,
 }
 impl Registry<dyn Task> for EngineTaskRegistry {
+    #[instrument]
     fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier) {
         // Insert the task into the hashmap with (mod_id, identifier) as the key
         debug!(
