@@ -2,14 +2,27 @@ syntax = "proto3";
 package engine;
 service engine {
   rpc AquireTask(TaskRequest) returns (Task);
-  rpc CreateTask(Task) returns (Task);
   rpc AquireTaskReg(empty) returns (TaskRegistry);
   rpc PublishTask(Task) returns (empty);
   rpc cgrpc(cgrpcmsg) returns (cgrpcmsg);
+  rpc CreateTask(Task) returns (Task);
+  // rpc GetTasks(TaskPageRequest) returns (TaskPage);
 }
 
 message empty {}
-
+message TaskPageRequest {
+  string namespace = 1;
+  string task = 2;
+  uint64 page = 3;
+  uint32 pageSize = 4;
+}
+message TaskPage {
+  string namespace = 1;
+  string task = 2;
+  uint64 page = 3;
+  uint32 pageSize = 4;
+  repeated Task tasks = 5;
+}
 message cgrpcmsg {
   string handler_mod_id = 1;
   string handler_id = 2;
