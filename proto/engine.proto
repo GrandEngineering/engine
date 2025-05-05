@@ -6,7 +6,7 @@ service engine {
   rpc PublishTask(Task) returns (empty);
   rpc cgrpc(cgrpcmsg) returns (cgrpcmsg);
   rpc CreateTask(Task) returns (Task);
-  // rpc GetTasks(TaskPageRequest) returns (TaskPage);
+  rpc GetTasks(TaskPageRequest) returns (TaskPage);
 }
 
 message empty {}
