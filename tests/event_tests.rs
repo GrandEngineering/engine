@@ -98,6 +98,9 @@ fn test_task_registration() {
     }
 
     impl Task for TestTask {
+        fn to_toml(&self) -> String {
+            "".into()
+        }
         fn get_id(&self) -> (String, String) {
             self.id.clone()
         }
@@ -147,6 +150,9 @@ fn test_task_execution() {
     }
 
     impl Task for TestTask {
+        fn to_toml(&self) -> String {
+            "".into()
+        }
         fn from_toml(&self, d: String) -> Box<dyn Task> {
             return Box::new(self.clone());
         }
@@ -191,6 +197,9 @@ fn test_task_serialization() {
     }
 
     impl Task for TestTask {
+        fn to_toml(&self) -> String {
+            "".into()
+        }
         fn from_toml(&self, d: String) -> Box<dyn Task> {
             return Box::new(self.clone());
         }
