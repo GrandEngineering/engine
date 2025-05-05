@@ -29,6 +29,12 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn get_tasks(
+        &self,
+        request: tonic::Request<proto::TaskPageRequest>,
+    ) -> std::result::Result<tonic::Response<proto::TaskPage>, tonic::Status> {
+        return Err(tonic::Status::aborted("INDEV"));
+    }
     async fn cgrpc(
         &self,
         request: tonic::Request<proto::Cgrpcmsg>,
