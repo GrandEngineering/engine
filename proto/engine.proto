@@ -11,9 +11,9 @@ service engine {
 
 message empty {}
 enum TaskState {
-  QUEUED = 1;
-  PROCESSING = 2;
-  SOLVED = 3;
+  QUEUED = 0;
+  PROCESSING = 1;
+  SOLVED = 2;
 }
 message TaskPageRequest {
   string namespace = 1;

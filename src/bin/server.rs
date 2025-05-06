@@ -33,6 +33,18 @@ impl Engine for EngineService {
         &self,
         request: tonic::Request<proto::TaskPageRequest>,
     ) -> std::result::Result<tonic::Response<proto::TaskPage>, tonic::Status> {
+        let mut api = self.EngineAPI.write().await;
+        let challenge = get_auth(&request);
+        let uid = get_uid(&request);
+        let db = api.db.clone();
+        if !Events::CheckAuth(&mut api, uid, challenge, db) {
+            //TODO: change to AdminSpecific Auth
+            info!("GetTask denied due to Invalid Auth");
+            return Err(Status::permission_denied("Invalid authentication"));
+        };
+        let data = request.get_ref();
+        match data {}
+
         return Err(tonic::Status::aborted("INDEV"));
     }
     async fn cgrpc(
