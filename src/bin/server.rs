@@ -7,9 +7,12 @@ use enginelib::{
     event::{debug, info, warn},
     events::{self, Events, ID},
     plugin::LibraryManager,
-    task::{StoredTask, Task, TaskQueue},
+    task::{SolvedTasks, StoredExecutingTask, StoredTask, Task, TaskQueue},
 };
-use proto::engine_server::{Engine, EngineServer};
+use proto::{
+    TaskState,
+    engine_server::{Engine, EngineServer},
+};
 use std::{
     env::consts::OS,
     io::Read,
@@ -43,8 +46,37 @@ impl Engine for EngineService {
             return Err(Status::permission_denied("Invalid authentication"));
         };
         let data = request.get_ref();
-        match data {}
 
+        let q: Vec<proto::Task> = match data.clone().state() {
+            TaskState::Processing => api
+                .executing_tasks
+                .clone()
+                .tasks
+                .get(&(data.namespace.clone(), data.task.clone()))
+                .unwrap()
+                .iter()
+                .map(|f| proto::Task {
+                    id: f.id.clone(),
+                    task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                    task_payload: f.bytes.clone(),
+                    payload: Vec::new(),
+                })
+                .collect(),
+            _ => api
+                .task_queue
+                .clone()
+                .tasks
+                .get(&(data.namespace.clone(), data.task.clone()))
+                .unwrap()
+                .iter()
+                .map(|f| proto::Task {
+                    id: f.id.clone(),
+                    task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                    task_payload: f.bytes.clone(),
+                    payload: Vec::new(),
+                })
+                .collect(),
+        };
         return Err(tonic::Status::aborted("INDEV"));
     }
     async fn cgrpc(
