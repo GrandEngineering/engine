@@ -107,7 +107,7 @@ impl Engine for EngineService {
         let end = index + data.page_size as u64;
         let mut final_vec = Vec::new();
         for n in index..end {
-            if (q.len() > n as usize) {
+            if q.len() > n as usize {
                 final_vec.push(q.get(n as usize));
             }
         }
