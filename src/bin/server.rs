@@ -48,34 +48,60 @@ impl Engine for EngineService {
         let data = request.get_ref();
 
         let q: Vec<proto::Task> = match data.clone().state() {
-            TaskState::Processing => api
-                .executing_tasks
-                .clone()
-                .tasks
-                .get(&(data.namespace.clone(), data.task.clone()))
-                .unwrap()
-                .iter()
-                .map(|f| proto::Task {
-                    id: f.id.clone(),
-                    task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
-                    task_payload: f.bytes.clone(),
-                    payload: Vec::new(),
-                })
-                .collect(),
-            _ => api
-                .task_queue
-                .clone()
-                .tasks
-                .get(&(data.namespace.clone(), data.task.clone()))
-                .unwrap()
-                .iter()
-                .map(|f| proto::Task {
-                    id: f.id.clone(),
-                    task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
-                    task_payload: f.bytes.clone(),
-                    payload: Vec::new(),
-                })
-                .collect(),
+            TaskState::Processing => {
+                let mut d = api
+                    .executing_tasks
+                    .clone()
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                    .unwrap()
+                    .clone();
+                d.sort_by_key(|f| f.id.clone());
+                d.iter()
+                    .map(|f| proto::Task {
+                        id: f.id.clone(),
+                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                        task_payload: f.bytes.clone(),
+                        payload: Vec::new(),
+                    })
+                    .collect()
+            }
+            TaskState::Queued => {
+                let mut d = api
+                    .task_queue
+                    .clone()
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                    .unwrap()
+                    .clone();
+                d.sort_by_key(|f| f.id.clone());
+                d.iter()
+                    .map(|f| proto::Task {
+                        id: f.id.clone(),
+                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                        task_payload: f.bytes.clone(),
+                        payload: Vec::new(),
+                    })
+                    .collect()
+            }
+            TaskState::Solved => {
+                let mut d = api
+                    .solved_tasks
+                    .clone()
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                    .unwrap()
+                    .clone();
+                d.sort_by_key(|f| f.id.clone());
+                d.iter()
+                    .map(|f| proto::Task {
+                        id: f.id.clone(),
+                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                        task_payload: f.bytes.clone(),
+                        payload: Vec::new(),
+                    })
+                    .collect()
+            }
         };
         return Err(tonic::Status::aborted("INDEV"));
     }
