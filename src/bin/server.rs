@@ -7,9 +7,12 @@ use enginelib::{
     event::{debug, info, warn},
     events::{self, Events, ID},
     plugin::LibraryManager,
-    task::{StoredTask, Task, TaskQueue},
+    task::{SolvedTasks, StoredExecutingTask, StoredTask, Task, TaskQueue},
 };
-use proto::engine_server::{Engine, EngineServer};
+use proto::{
+    TaskState,
+    engine_server::{Engine, EngineServer},
+};
 use std::{
     env::consts::OS,
     io::Read,
@@ -29,6 +32,94 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn get_tasks(
+        &self,
+        request: tonic::Request<proto::TaskPageRequest>,
+    ) -> std::result::Result<tonic::Response<proto::TaskPage>, tonic::Status> {
+        let mut api = self.EngineAPI.write().await;
+        let challenge = get_auth(&request);
+        let uid = get_uid(&request);
+        let db = api.db.clone();
+        if !Events::CheckAuth(&mut api, uid, challenge, db) {
+            //TODO: change to AdminSpecific Auth
+            info!("GetTask denied due to Invalid Auth");
+            return Err(Status::permission_denied("Invalid authentication"));
+        };
+        let data = request.get_ref();
+
+        let q: Vec<proto::Task> = match data.clone().state() {
+            TaskState::Processing => {
+                let mut d = api
+                    .executing_tasks
+                    .clone()
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                    .unwrap()
+                    .clone();
+                d.sort_by_key(|f| f.id.clone());
+                d.iter()
+                    .map(|f| proto::Task {
+                        id: f.id.clone(),
+                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                        task_payload: f.bytes.clone(),
+                        payload: Vec::new(),
+                    })
+                    .collect()
+            }
+            TaskState::Queued => {
+                let mut d = api
+                    .task_queue
+                    .clone()
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                    .unwrap()
+                    .clone();
+                d.sort_by_key(|f| f.id.clone());
+                d.iter()
+                    .map(|f| proto::Task {
+                        id: f.id.clone(),
+                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                        task_payload: f.bytes.clone(),
+                        payload: Vec::new(),
+                    })
+                    .collect()
+            }
+            TaskState::Solved => {
+                let mut d = api
+                    .solved_tasks
+                    .clone()
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                    .unwrap()
+                    .clone();
+                d.sort_by_key(|f| f.id.clone());
+                d.iter()
+                    .map(|f| proto::Task {
+                        id: f.id.clone(),
+                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                        task_payload: f.bytes.clone(),
+                        payload: Vec::new(),
+                    })
+                    .collect()
+            }
+        };
+        let index = data.page * data.page_size as u64;
+        let end = index + data.page_size as u64;
+        let mut final_vec = Vec::new();
+        for n in index..end {
+            if q.len() > n as usize {
+                final_vec.push(q.get(n as usize).unwrap().clone());
+            }
+        }
+        return Ok(tonic::Response::new(proto::TaskPage {
+            namespace: data.namespace.clone(),
+            task: data.task.clone(),
+            page: data.page,
+            page_size: data.page_size,
+            state: data.state,
+            tasks: final_vec,
+        }));
+    }
     async fn cgrpc(
         &self,
         request: tonic::Request<proto::Cgrpcmsg>,
