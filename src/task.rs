@@ -7,7 +7,7 @@ use crate::{Identifier, Registry};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument, warn};
-
+#[derive(Clone)]
 pub enum TaskState {
     StoredTask(StoredTask),
     StoredExecutingTask(StoredExecutingTask),
