@@ -10,18 +10,25 @@ service engine {
 }
 
 message empty {}
+enum TaskState {
+  QUEUED = 1;
+  PROCESSING = 2;
+  SOLVED = 3;
+}
 message TaskPageRequest {
   string namespace = 1;
   string task = 2;
   uint64 page = 3;
   uint32 pageSize = 4;
+  TaskState state = 5;
 }
 message TaskPage {
   string namespace = 1;
   string task = 2;
   uint64 page = 3;
   uint32 pageSize = 4;
-  repeated Task tasks = 5;
+  TaskState state = 5;
+  repeated Task tasks = 6;
 }
 message cgrpcmsg {
   string handler_mod_id = 1;
