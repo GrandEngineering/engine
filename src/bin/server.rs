@@ -108,10 +108,17 @@ impl Engine for EngineService {
         let mut final_vec = Vec::new();
         for n in index..end {
             if q.len() > n as usize {
-                final_vec.push(q.get(n as usize));
+                final_vec.push(q.get(n as usize).unwrap().clone());
             }
         }
-        return Err(tonic::Status::aborted("INDEV"));
+        return Ok(tonic::Response::new(proto::TaskPage {
+            namespace: data.namespace.clone(),
+            task: data.task.clone(),
+            page: data.page,
+            page_size: data.page_size,
+            state: data.state,
+            tasks: final_vec,
+        }));
     }
     async fn cgrpc(
         &self,
