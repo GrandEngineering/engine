@@ -8,6 +8,11 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument, warn};
 
+pub enum TaskState {
+    StoredTask(StoredTask),
+    StoredExecutingTask(StoredExecutingTask),
+}
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct StoredTask {
     pub bytes: Vec<u8>,
