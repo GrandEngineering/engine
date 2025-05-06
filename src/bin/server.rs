@@ -103,6 +103,14 @@ impl Engine for EngineService {
                     .collect()
             }
         };
+        let index = data.page * data.page_size as u64;
+        let end = index + data.page_size as u64;
+        let mut final_vec = Vec::new();
+        for n in index..end {
+            if (q.len() > n as usize) {
+                final_vec.push(q.get(n as usize));
+            }
+        }
         return Err(tonic::Status::aborted("INDEV"));
     }
     async fn cgrpc(
