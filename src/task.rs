@@ -7,11 +7,6 @@ use crate::{Identifier, Registry};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument, warn};
-#[derive(Clone)]
-pub enum TaskState {
-    StoredTask(Vec<StoredTask>),
-    StoredExecutingTask(Vec<StoredExecutingTask>),
-}
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct StoredTask {
