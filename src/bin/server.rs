@@ -7,9 +7,12 @@ use enginelib::{
     event::{debug, info, warn},
     events::{self, Events, ID},
     plugin::LibraryManager,
-    task::{StoredTask, Task, TaskQueue},
+    task::{SolvedTasks, StoredExecutingTask, StoredTask, Task, TaskQueue},
 };
-use proto::engine_server::{Engine, EngineServer};
+use proto::{
+    TaskState,
+    engine_server::{Engine, EngineServer},
+};
 use std::{
     env::consts::OS,
     io::Read,
@@ -29,6 +32,122 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn get_tasks(
+        &self,
+        request: tonic::Request<proto::TaskPageRequest>,
+    ) -> std::result::Result<tonic::Response<proto::TaskPage>, tonic::Status> {
+        let mut api = self.EngineAPI.write().await;
+        let challenge = get_auth(&request);
+        let uid = get_uid(&request);
+        let db = api.db.clone();
+        if !Events::CheckAuth(&mut api, uid, challenge, db) {
+            //TODO: change to AdminSpecific Auth
+            info!("GetTask denied due to Invalid Auth");
+            return Err(Status::permission_denied("Invalid authentication"));
+        };
+        let data = request.get_ref();
+
+        let q: Vec<proto::Task> = match data.clone().state() {
+            TaskState::Processing => {
+                match api
+                    .executing_tasks
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                {
+                    Some(tasks) => {
+                        let mut task_refs: Vec<_> = tasks.iter().collect();
+                        task_refs.sort_by_key(|f| &f.id);
+                        task_refs
+                            .iter()
+                            .map(|f| proto::Task {
+                                id: f.id.clone(),
+                                task_id: format!("{}:{}", data.namespace, data.task),
+                                task_payload: f.bytes.clone(),
+                                payload: Vec::new(),
+                            })
+                            .collect()
+                    }
+                    None => {
+                        info!(
+                            "Namespace {:?} and task {:?} not found in Processing state",
+                            data.namespace, data.task
+                        );
+                        Vec::new()
+                    }
+                }
+            }
+            TaskState::Queued => {
+                match api
+                    .task_queue
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                {
+                    Some(tasks) => {
+                        let mut task_refs: Vec<_> = tasks.iter().collect();
+                        task_refs.sort_by_key(|f| &f.id);
+                        task_refs
+                            .map(|f| proto::Task {
+                                id: f.id.clone(),
+                                task_id: format!("{}:{}", data.namespace, data.task),
+                                task_payload: f.bytes.clone(),
+                                payload: Vec::new(),
+                            })
+                            .collect()
+                    }
+                    None => {
+                        info!(
+                            "Namespace {:?} and task {:?} not found in Queued state",
+                            data.namespace, data.task
+                        );
+                        Vec::new()
+                    }
+                }
+            }
+            TaskState::Solved => {
+                match api
+                    .solved_tasks
+                    .tasks
+                    .get(&(data.namespace.clone(), data.task.clone()))
+                {
+                    Some(tasks) => {
+                        let mut task_refs: Vec<_> = tasks.iter().collect();
+                        task_refs.sort_by_key(|f| &f.id);
+                        task_refs
+                            .map(|f| proto::Task {
+                                id: f.id.clone(),
+                                task_id: format!("{}:{}", data.namespace, data.task),
+                                task_payload: f.bytes.clone(),
+                                payload: Vec::new(),
+                            })
+                            .collect()
+                    }
+                    None => {
+                        info!(
+                            "Namespace {:?} and task {:?} not found in Solved state",
+                            data.namespace, data.task
+                        );
+                        Vec::new()
+                    }
+                }
+            }
+        };
+        let index = data.page * data.page_size as u64;
+        let end = index + data.page_size as u64;
+        let final_vec: Vec<_> = q
+            .iter()
+            .skip(index as usize)
+            .take(data.page_size as usize)
+            .cloned()
+            .collect();
+        return Ok(tonic::Response::new(proto::TaskPage {
+            namespace: data.namespace.clone(),
+            task: data.task.clone(),
+            page: data.page,
+            page_size: data.page_size,
+            state: data.state,
+            tasks: final_vec,
+        }));
+    }
     async fn cgrpc(
         &self,
         request: tonic::Request<proto::Cgrpcmsg>,
