@@ -135,12 +135,12 @@ impl Engine for EngineService {
         };
         let index = data.page * data.page_size as u64;
         let end = index + data.page_size as u64;
-        let mut final_vec = Vec::new();
-        for n in index..end {
-            if q.len() > n as usize {
-                final_vec.push(q.get(n as usize).unwrap().clone());
-            }
-        }
+        let final_vec: Vec<_> = q
+            .iter()
+            .skip(index as usize)
+            .take(data.page_size as usize)
+            .cloned()
+            .collect();
         return Ok(tonic::Response::new(proto::TaskPage {
             namespace: data.namespace.clone(),
             task: data.task.clone(),
