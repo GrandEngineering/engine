@@ -6,10 +6,12 @@ service engine {
   rpc PublishTask(Task) returns (empty);
   rpc cgrpc(cgrpcmsg) returns (cgrpcmsg);
   rpc CreateTask(Task) returns (Task);
+  // rpc DeleteTask(Task) returns (empty);
   rpc GetTasks(TaskPageRequest) returns (TaskPage);
 }
 
 message empty {}
+message TaskSelector {}
 enum TaskState {
   QUEUED = 0;
   PROCESSING = 1;

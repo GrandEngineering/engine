@@ -49,58 +49,88 @@ impl Engine for EngineService {
 
         let q: Vec<proto::Task> = match data.clone().state() {
             TaskState::Processing => {
-                let mut d = api
+                match api
                     .executing_tasks
                     .clone()
                     .tasks
                     .get(&(data.namespace.clone(), data.task.clone()))
-                    .unwrap()
-                    .clone();
-                d.sort_by_key(|f| f.id.clone());
-                d.iter()
-                    .map(|f| proto::Task {
-                        id: f.id.clone(),
-                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
-                        task_payload: f.bytes.clone(),
-                        payload: Vec::new(),
-                    })
-                    .collect()
+                {
+                    Some(tasks) => {
+                        let mut d = tasks.clone();
+                        d.sort_by_key(|f| f.id.clone());
+                        d.iter()
+                            .map(|f| proto::Task {
+                                id: f.id.clone(),
+                                task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                                task_payload: f.bytes.clone(),
+                                payload: Vec::new(),
+                            })
+                            .collect()
+                    }
+                    None => {
+                        info!(
+                            "Namespace {:?} and task {:?} not found in Processing state",
+                            data.namespace, data.task
+                        );
+                        Vec::new()
+                    }
+                }
             }
             TaskState::Queued => {
-                let mut d = api
+                match api
                     .task_queue
                     .clone()
                     .tasks
                     .get(&(data.namespace.clone(), data.task.clone()))
-                    .unwrap()
-                    .clone();
-                d.sort_by_key(|f| f.id.clone());
-                d.iter()
-                    .map(|f| proto::Task {
-                        id: f.id.clone(),
-                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
-                        task_payload: f.bytes.clone(),
-                        payload: Vec::new(),
-                    })
-                    .collect()
+                {
+                    Some(tasks) => {
+                        let mut d = tasks.clone();
+                        d.sort_by_key(|f| f.id.clone());
+                        d.iter()
+                            .map(|f| proto::Task {
+                                id: f.id.clone(),
+                                task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                                task_payload: f.bytes.clone(),
+                                payload: Vec::new(),
+                            })
+                            .collect()
+                    }
+                    None => {
+                        info!(
+                            "Namespace {:?} and task {:?} not found in Queued state",
+                            data.namespace, data.task
+                        );
+                        Vec::new()
+                    }
+                }
             }
             TaskState::Solved => {
-                let mut d = api
+                match api
                     .solved_tasks
                     .clone()
                     .tasks
                     .get(&(data.namespace.clone(), data.task.clone()))
-                    .unwrap()
-                    .clone();
-                d.sort_by_key(|f| f.id.clone());
-                d.iter()
-                    .map(|f| proto::Task {
-                        id: f.id.clone(),
-                        task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
-                        task_payload: f.bytes.clone(),
-                        payload: Vec::new(),
-                    })
-                    .collect()
+                {
+                    Some(tasks) => {
+                        let mut d = tasks.clone();
+                        d.sort_by_key(|f| f.id.clone());
+                        d.iter()
+                            .map(|f| proto::Task {
+                                id: f.id.clone(),
+                                task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                                task_payload: f.bytes.clone(),
+                                payload: Vec::new(),
+                            })
+                            .collect()
+                    }
+                    None => {
+                        info!(
+                            "Namespace {:?} and task {:?} not found in Solved state",
+                            data.namespace, data.task
+                        );
+                        Vec::new()
+                    }
+                }
             }
         };
         let index = data.page * data.page_size as u64;
