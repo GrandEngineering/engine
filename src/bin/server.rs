@@ -32,6 +32,29 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    /// Retrieves a paginated list of tasks filtered by namespace, task name, and state.
+    ///
+    /// Authenticates the request and, if authorized, returns tasks in the specified state
+    /// (`Processing`, `Queued`, or `Solved`) for the given namespace and task name. The results
+    /// are sorted by task ID and paginated according to the requested page and page size.
+    ///
+    /// Returns a `TaskPage` containing the filtered tasks and pagination metadata, or a
+    /// permission denied error if authentication fails.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Example usage within a tonic gRPC client context:
+    /// let request = proto::TaskPageRequest {
+    ///     namespace: "example_ns".to_string(),
+    ///     task: "example_task".to_string(),
+    ///     state: proto::TaskState::Queued as i32,
+    ///     page: 0,
+    ///     page_size: 10,
+    /// };
+    /// let response = engine_client.get_tasks(request).await?;
+    /// assert!(response.get_ref().tasks.len() <= 10);
+    /// ```
     async fn get_tasks(
         &self,
         request: tonic::Request<proto::TaskPageRequest>,
@@ -150,6 +173,26 @@ impl Engine for EngineService {
             tasks: final_vec,
         }));
     }
+    /// Handles custom gRPC messages with admin-level authentication.
+    ///
+    /// Processes a CGRPC request by verifying admin credentials and dispatching the event payload to the appropriate handler. Returns the processed event payload in the response. If authentication fails, returns a permission denied error.
+    ///
+    /// # Returns
+    /// A `Cgrpcmsg` response containing the processed event payload, or a permission denied gRPC status on failed authentication.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // Example usage within a gRPC client context:
+    /// let request = proto::Cgrpcmsg {
+    ///     handler_mod_id: "mod".to_string(),
+    ///     handler_id: "handler".to_string(),
+    ///     event_payload: vec![1, 2, 3],
+    ///     // ... other fields ...
+    /// };
+    /// let response = engine_service.cgrpc(tonic::Request::new(request)).await?;
+    /// assert_eq!(response.get_ref().handler_mod_id, "mod");
+    /// ```
     async fn cgrpc(
         &self,
         request: tonic::Request<proto::Cgrpcmsg>,
