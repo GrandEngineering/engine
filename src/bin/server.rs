@@ -83,9 +83,9 @@ impl Engine for EngineService {
                     .get(&(data.namespace.clone(), data.task.clone()))
                 {
                     Some(tasks) => {
-                        let mut task_refs: Vec<_> = tasks.iter().collect();
-                        task_refs.sort_by_key(|f| &f.id);
-                        task_refs
+                        let mut d = tasks.clone();
+                        d.sort_by_key(|f| f.id.clone());
+                        d.iter()
                             .map(|f| proto::Task {
                                 id: f.id.clone(),
                                 task_id: format!("{}:{}", data.namespace, data.task),
@@ -110,9 +110,9 @@ impl Engine for EngineService {
                     .get(&(data.namespace.clone(), data.task.clone()))
                 {
                     Some(tasks) => {
-                        let mut task_refs: Vec<_> = tasks.iter().collect();
-                        task_refs.sort_by_key(|f| &f.id);
-                        task_refs
+                        let mut d = tasks.clone();
+                        d.sort_by_key(|f| f.id.clone());
+                        d.iter()
                             .map(|f| proto::Task {
                                 id: f.id.clone(),
                                 task_id: format!("{}:{}", data.namespace, data.task),
