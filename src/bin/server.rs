@@ -51,17 +51,17 @@ impl Engine for EngineService {
             TaskState::Processing => {
                 match api
                     .executing_tasks
-                    .clone()
                     .tasks
                     .get(&(data.namespace.clone(), data.task.clone()))
                 {
                     Some(tasks) => {
-                        let mut d = tasks.clone();
-                        d.sort_by_key(|f| f.id.clone());
-                        d.iter()
+                        let mut task_refs: Vec<_> = tasks.iter().collect();
+                        task_refs.sort_by_key(|f| &f.id);
+                        task_refs
+                            .iter()
                             .map(|f| proto::Task {
                                 id: f.id.clone(),
-                                task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                                task_id: format!("{}:{}", data.namespace, data.task),
                                 task_payload: f.bytes.clone(),
                                 payload: Vec::new(),
                             })
@@ -79,17 +79,16 @@ impl Engine for EngineService {
             TaskState::Queued => {
                 match api
                     .task_queue
-                    .clone()
                     .tasks
                     .get(&(data.namespace.clone(), data.task.clone()))
                 {
                     Some(tasks) => {
-                        let mut d = tasks.clone();
-                        d.sort_by_key(|f| f.id.clone());
-                        d.iter()
+                        let mut task_refs: Vec<_> = tasks.iter().collect();
+                        task_refs.sort_by_key(|f| &f.id);
+                        task_refs
                             .map(|f| proto::Task {
                                 id: f.id.clone(),
-                                task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                                task_id: format!("{}:{}", data.namespace, data.task),
                                 task_payload: f.bytes.clone(),
                                 payload: Vec::new(),
                             })
@@ -107,17 +106,16 @@ impl Engine for EngineService {
             TaskState::Solved => {
                 match api
                     .solved_tasks
-                    .clone()
                     .tasks
                     .get(&(data.namespace.clone(), data.task.clone()))
                 {
                     Some(tasks) => {
-                        let mut d = tasks.clone();
-                        d.sort_by_key(|f| f.id.clone());
-                        d.iter()
+                        let mut task_refs: Vec<_> = tasks.iter().collect();
+                        task_refs.sort_by_key(|f| &f.id);
+                        task_refs
                             .map(|f| proto::Task {
                                 id: f.id.clone(),
-                                task_id: vec![data.namespace.clone(), data.task.clone()].join(":"),
+                                task_id: format!("{}:{}", data.namespace, data.task),
                                 task_payload: f.bytes.clone(),
                                 payload: Vec::new(),
                             })
