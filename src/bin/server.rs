@@ -19,7 +19,7 @@ use std::{
     sync::{Arc, RwLock as RS_RwLock},
 };
 use tokio::sync::RwLock;
-use tonic::{Request, Status, metadata::MetadataValue, transport::Server};
+use tonic::{Request, Response, Status, metadata::MetadataValue, transport::Server};
 
 mod proto {
     tonic::include_proto!("engine");
@@ -32,6 +32,12 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn delete_task(
+        &self,
+        request: tonic::Request<proto::Task>,
+    ) -> Result<Response<proto::Empty>, Status> {
+        return Ok(tonic::Response::new(proto::Empty {}));
+    }
     /// Retrieves a paginated list of tasks filtered by namespace, task name, and state.
     ///
     /// Authenticates the request and, if authorized, returns tasks in the specified state
@@ -491,7 +497,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
-        .build_v1alpha()
+        .build_v1()
         .unwrap();
 
     Server::builder()
