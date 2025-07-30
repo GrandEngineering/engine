@@ -1,4 +1,4 @@
-use std::{fs, io::Error};
+use std::{fs, io::Error, u32};
 
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
@@ -8,6 +8,7 @@ pub struct ConfigTomlServer {
     pub cgrpc_token: Option<String>, // Administrator Token, used to invoke cgrpc reqs. If not preset will default to no protection.
     pub port: String,
     pub clean_tasks: u64,
+    pub pagination_limit: u32,
 }
 impl Default for ConfigTomlServer {
     fn default() -> Self {
@@ -15,6 +16,7 @@ impl Default for ConfigTomlServer {
             port: "[::1]:50051".into(),
             cgrpc_token: None,
             clean_tasks: 60,
+            pagination_limit: u32::MAX,
         }
     }
 }
