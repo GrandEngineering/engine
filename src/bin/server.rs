@@ -34,8 +34,24 @@ struct EngineService {
 impl Engine for EngineService {
     async fn delete_task(
         &self,
-        request: tonic::Request<proto::Task>,
+        request: tonic::Request<proto::TaskSelector>,
     ) -> Result<Response<proto::Empty>, Status> {
+        let mut api = self.EngineAPI.write().await;
+        let data = request.get_ref();
+        match (data.state()) {
+            TaskState::Processing => {
+                let query = api
+                    .executing_tasks
+                    .tasks
+                    .get(&ID(&data.namespace, &data.task))
+                    .unwrap()
+                    .clone();
+                let res: Vec<&StoredExecutingTask> =
+                    query.iter().filter(|f| f.id == data.id).collect();
+            }
+            TaskState::Solved => {}
+            TaskState::Queued => {}
+        }
         return Ok(tonic::Response::new(proto::Empty {}));
     }
     /// Retrieves a paginated list of tasks filtered by namespace, task name, and state.
