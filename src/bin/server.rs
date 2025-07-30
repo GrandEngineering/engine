@@ -155,7 +155,7 @@ impl Engine for EngineService {
             }
         };
         let index = data.page * data.page_size as u64;
-        let end = index + data.page_size as u64;
+        let end = index + (api.cfg.config_toml.pagination_limit.min(data.page_size) as u64);
         let final_vec: Vec<_> = q
             .iter()
             .skip(index as usize)
