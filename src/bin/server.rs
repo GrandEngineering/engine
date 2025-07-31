@@ -43,11 +43,10 @@ impl Engine for EngineService {
                 let query = api
                     .executing_tasks
                     .tasks
-                    .get(&ID(&data.namespace, &data.task))
-                    .unwrap()
-                    .clone();
-                let res: Vec<&StoredExecutingTask> =
-                    query.iter().filter(|f| f.id == data.id).collect();
+                    .get_mut(&ID(&data.namespace, &data.task))
+                    .unwrap();
+
+                query.retain(|f| f.id != data.id);
             }
             TaskState::Solved => {}
             TaskState::Queued => {}
