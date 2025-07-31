@@ -8,7 +8,7 @@ use std::{collections::HashMap, fs};
 use tracing::{debug, error, info};
 #[derive(Clone, Debug)]
 pub struct LibraryInstance {
-    dynamicLibrary: Arc<ManuallyDrop<Library>>,
+    dynamic_library: Arc<ManuallyDrop<Library>>,
     pub metadata: Arc<LibraryMetadata>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,7 +169,7 @@ impl LibraryManager {
         self.libraries.insert(
             metadata.mod_id.clone(),
             LibraryInstance {
-                dynamicLibrary: Arc::new(ManuallyDrop::new(lib)),
+                dynamic_library: Arc::new(ManuallyDrop::new(lib)),
                 metadata: Arc::new(metadata.clone()),
             },
         );
