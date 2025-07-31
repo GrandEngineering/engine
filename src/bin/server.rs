@@ -38,39 +38,97 @@ impl Engine for EngineService {
     ) -> Result<Response<proto::Empty>, Status> {
         let mut api = self.EngineAPI.write().await;
         let data = request.get_ref();
-        // Delete Tasks From running memory
+        let id = ID(&data.namespace, &data.task);
+
+        // Inline error handling and logging for each state
         match data.state() {
-            TaskState::Processing => {
-                let query = api
-                    .executing_tasks
-                    .tasks
-                    .get_mut(&ID(&data.namespace, &data.task))
-                    .unwrap();
-
-                query.retain(|f| f.id != data.id);
-            }
-            TaskState::Solved => {
-                let query = api
-                    .solved_tasks
-                    .tasks
-                    .get_mut(&ID(&data.namespace, &data.task))
-                    .unwrap();
-
-                query.retain(|f| f.id != data.id);
-            }
-            TaskState::Queued => {
-                let query = api
-                    .task_queue
-                    .tasks
-                    .get_mut(&ID(&data.namespace, &data.task))
-                    .unwrap();
-
-                query.retain(|f| f.id != data.id);
-            }
+            TaskState::Processing => match api.executing_tasks.tasks.get_mut(&id) {
+                Some(query) => {
+                    let orig_len = query.len();
+                    query.retain(|f| f.id != data.id);
+                    if query.len() == orig_len {
+                        info!(
+                            "DeleteTask: Task with id {} not found in Processing state for namespace: {}, task: {}",
+                            data.id, data.namespace, data.task
+                        );
+                        return Err(Status::not_found(format!(
+                            "Task with id {} not found in Processing state",
+                            data.id
+                        )));
+                    }
+                }
+                None => {
+                    info!(
+                        "DeleteTask: No tasks found in Processing state for namespace: {}, task: {}",
+                        data.namespace, data.task
+                    );
+                    return Err(Status::not_found(
+                        "No tasks found in Processing state for given namespace and task",
+                    ));
+                }
+            },
+            TaskState::Solved => match api.solved_tasks.tasks.get_mut(&id) {
+                Some(query) => {
+                    let orig_len = query.len();
+                    query.retain(|f| f.id != data.id);
+                    if query.len() == orig_len {
+                        info!(
+                            "DeleteTask: Task with id {} not found in Solved state for namespace: {}, task: {}",
+                            data.id, data.namespace, data.task
+                        );
+                        return Err(Status::not_found(format!(
+                            "Task with id {} not found in Solved state",
+                            data.id
+                        )));
+                    }
+                }
+                None => {
+                    info!(
+                        "DeleteTask: No tasks found in Solved state for namespace: {}, task: {}",
+                        data.namespace, data.task
+                    );
+                    return Err(Status::not_found(
+                        "No tasks found in Solved state for given namespace and task",
+                    ));
+                }
+            },
+            TaskState::Queued => match api.task_queue.tasks.get_mut(&id) {
+                Some(query) => {
+                    let orig_len = query.len();
+                    query.retain(|f| f.id != data.id);
+                    if query.len() == orig_len {
+                        info!(
+                            "DeleteTask: Task with id {} not found in Queued state for namespace: {}, task: {}",
+                            data.id, data.namespace, data.task
+                        );
+                        return Err(Status::not_found(format!(
+                            "Task with id {} not found in Queued state",
+                            data.id
+                        )));
+                    }
+                }
+                None => {
+                    info!(
+                        "DeleteTask: No tasks found in Queued state for namespace: {}, task: {}",
+                        data.namespace, data.task
+                    );
+                    return Err(Status::not_found(
+                        "No tasks found in Queued state for given namespace and task",
+                    ));
+                }
+            },
         }
-        //Sync running memory into DB
+
+        // Sync running memory into DB
         EngineAPI::sync_db(&mut api);
-        return Ok(tonic::Response::new(proto::Empty {}));
+        info!(
+            "DeleteTask: Successfully deleted task with id {} in state {:?} for namespace: {}, task: {}",
+            data.id,
+            data.state(),
+            data.namespace,
+            data.task
+        );
+        Ok(tonic::Response::new(proto::Empty {}))
     }
     /// Retrieves a paginated list of tasks filtered by namespace, task name, and state.
     ///
