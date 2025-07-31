@@ -92,6 +92,19 @@ impl EngineAPI {
         let t = api.try_read().unwrap().cfg.config_toml.clean_tasks;
         spawn(clear_sled_periodically(api, t));
     }
+    pub fn sync_db(api: &mut EngineAPI) {
+        // IF THIS FN CAUSES PANIC SOMETHING IS VERY BROKEN
+        let tasks_db = bincode::serialize(&api.task_queue.clone()).unwrap();
+        api.db.insert("tasks", tasks_db).unwrap();
+
+        let executing_tasks_db = bincode::serialize(&api.executing_tasks.clone()).unwrap();
+        api.db
+            .insert("executing_tasks", executing_tasks_db)
+            .unwrap();
+
+        let solved_tasks_db = bincode::serialize(&api.solved_tasks.clone()).unwrap();
+        api.db.insert("solved_tasks", solved_tasks_db).unwrap();
+    }
     fn init_db(api: &mut EngineAPI) {
         let tasks = api.db.get("tasks");
         let exec_tasks = api.db.get("executing_tasks");
