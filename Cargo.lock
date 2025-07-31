@@ -637,7 +637,7 @@ dependencies = [
 [[package]]
 name = "enginelib"
 version = "0.2.0"
-source = "git+https://github.com/GrandEngineering/enginelib.git#856dbb72535e749cf9a4b68fb4c82573119a697d"
+source = "git+https://github.com/GrandEngineering/enginelib.git#c4f620bf50d4cdd07a388a1859f580138c612d3b"
 dependencies = [
  "bincode",
  "chrono",
@@ -2109,9 +2109,9 @@ dependencies = [
 
 [[package]]
 name = "libredox"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "360e552c93fa0e8152ab463bc4c4837fce76a225df11dfaeea66c313de5e61f7"
+checksum = "391290121bad3d37fbddad76d8f5d1c1c314cfc646d143d7e07a3086ddff0ce3"
 dependencies = [
  "bitflags 2.9.1",
  "libc",
@@ -2155,7 +2155,7 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+https://github.com/GrandEngineering/enginelib.git#856dbb72535e749cf9a4b68fb4c82573119a697d"
+source = "git+https://github.com/GrandEngineering/enginelib.git#c4f620bf50d4cdd07a388a1859f580138c612d3b"
 dependencies = [
  "proc-macro2",
  "quote",

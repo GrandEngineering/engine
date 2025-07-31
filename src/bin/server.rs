@@ -38,6 +38,7 @@ impl Engine for EngineService {
     ) -> Result<Response<proto::Empty>, Status> {
         let mut api = self.EngineAPI.write().await;
         let data = request.get_ref();
+        // Delete Tasks From running memory
         match data.state() {
             TaskState::Processing => {
                 let query = api
@@ -67,6 +68,8 @@ impl Engine for EngineService {
                 query.retain(|f| f.id != data.id);
             }
         }
+        //Sync running memory into DB
+        EngineAPI::sync_db(&mut api);
         return Ok(tonic::Response::new(proto::Empty {}));
     }
     /// Retrieves a paginated list of tasks filtered by namespace, task name, and state.
