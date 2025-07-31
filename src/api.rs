@@ -78,9 +78,9 @@ impl EngineAPI {
         Self::setup_logger();
         api.cfg = Config::new();
         Self::init_db(api);
-        let mut newLibManager = LibraryManager::default();
-        newLibManager.load_modules(api);
-        api.lib_manager = newLibManager;
+        let mut new_lib_manager = LibraryManager::default();
+        new_lib_manager.load_modules(api);
+        api.lib_manager = new_lib_manager;
         Events::init(api);
     }
     pub fn init_packer(api: &mut Self) {
