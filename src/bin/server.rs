@@ -14,6 +14,7 @@ use proto::{
     engine_server::{Engine, EngineServer},
 };
 use std::{
+    collections::HashMap,
     env::consts::OS,
     io::Read,
     sync::{Arc, RwLock as RS_RwLock},
@@ -40,83 +41,81 @@ impl Engine for EngineService {
         let data = request.get_ref();
         let id = ID(&data.namespace, &data.task);
 
-        // Inline error handling and logging for each state
-        match data.state() {
-            TaskState::Processing => match api.executing_tasks.tasks.get_mut(&id) {
+        // Generic helper for removing a task by id from a collection, using an id extractor closure
+        fn delete_task_from_collection<T, F>(
+            collection: &mut HashMap<(String, String), Vec<T>>,
+            id: &(String, String),
+            task_id: &str,
+            state_name: &str,
+            namespace: &str,
+            task: &str,
+            id_extractor: F,
+        ) -> Result<(), Status>
+        where
+            F: Fn(&T) -> &str,
+        {
+            match collection.get_mut(id) {
                 Some(query) => {
                     let orig_len = query.len();
-                    query.retain(|f| f.id != data.id);
+                    query.retain(|f| id_extractor(f) != task_id);
                     if query.len() == orig_len {
                         info!(
-                            "DeleteTask: Task with id {} not found in Processing state for namespace: {}, task: {}",
-                            data.id, data.namespace, data.task
+                            "DeleteTask: Task with id {} not found in {} state for namespace: {}, task: {}",
+                            task_id, state_name, namespace, task
                         );
                         return Err(Status::not_found(format!(
-                            "Task with id {} not found in Processing state",
-                            data.id
+                            "Task with id {} not found in {} state",
+                            task_id, state_name
                         )));
                     }
+                    Ok(())
                 }
                 None => {
                     info!(
-                        "DeleteTask: No tasks found in Processing state for namespace: {}, task: {}",
-                        data.namespace, data.task
+                        "DeleteTask: No tasks found in {} state for namespace: {}, task: {}",
+                        state_name, namespace, task
                     );
-                    return Err(Status::not_found(
-                        "No tasks found in Processing state for given namespace and task",
-                    ));
+                    Err(Status::not_found(format!(
+                        "No tasks found in {} state for given namespace and task",
+                        state_name
+                    )))
                 }
-            },
-            TaskState::Solved => match api.solved_tasks.tasks.get_mut(&id) {
-                Some(query) => {
-                    let orig_len = query.len();
-                    query.retain(|f| f.id != data.id);
-                    if query.len() == orig_len {
-                        info!(
-                            "DeleteTask: Task with id {} not found in Solved state for namespace: {}, task: {}",
-                            data.id, data.namespace, data.task
-                        );
-                        return Err(Status::not_found(format!(
-                            "Task with id {} not found in Solved state",
-                            data.id
-                        )));
-                    }
-                }
-                None => {
-                    info!(
-                        "DeleteTask: No tasks found in Solved state for namespace: {}, task: {}",
-                        data.namespace, data.task
-                    );
-                    return Err(Status::not_found(
-                        "No tasks found in Solved state for given namespace and task",
-                    ));
-                }
-            },
-            TaskState::Queued => match api.task_queue.tasks.get_mut(&id) {
-                Some(query) => {
-                    let orig_len = query.len();
-                    query.retain(|f| f.id != data.id);
-                    if query.len() == orig_len {
-                        info!(
-                            "DeleteTask: Task with id {} not found in Queued state for namespace: {}, task: {}",
-                            data.id, data.namespace, data.task
-                        );
-                        return Err(Status::not_found(format!(
-                            "Task with id {} not found in Queued state",
-                            data.id
-                        )));
-                    }
-                }
-                None => {
-                    info!(
-                        "DeleteTask: No tasks found in Queued state for namespace: {}, task: {}",
-                        data.namespace, data.task
-                    );
-                    return Err(Status::not_found(
-                        "No tasks found in Queued state for given namespace and task",
-                    ));
-                }
-            },
+            }
+        }
+
+        // Use the helper for each state
+        let result = match data.state() {
+            TaskState::Processing => delete_task_from_collection(
+                &mut api.executing_tasks.tasks,
+                &id,
+                &data.id,
+                "Processing",
+                &data.namespace,
+                &data.task,
+                |f| &f.id,
+            ),
+            TaskState::Solved => delete_task_from_collection(
+                &mut api.solved_tasks.tasks,
+                &id,
+                &data.id,
+                "Solved",
+                &data.namespace,
+                &data.task,
+                |f| &f.id,
+            ),
+            TaskState::Queued => delete_task_from_collection(
+                &mut api.task_queue.tasks,
+                &id,
+                &data.id,
+                "Queued",
+                &data.namespace,
+                &data.task,
+                |f| &f.id,
+            ),
+        };
+
+        if let Err(e) = result {
+            return Err(e);
         }
 
         // Sync running memory into DB
