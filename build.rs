@@ -5,8 +5,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     tonic_prost_build::configure()
         .file_descriptor_set_path(out_dir.join("engine_descriptor.bin"))
-        .compile_protos(&["proto/engine.proto"], &["proto"])
-        .unwrap();
-    tonic_prost_build::compile_protos("proto/engine.proto")?;
+        .compile_protos(&["proto/engine.proto"], &["proto"])?;
+
     Ok(())
 }
