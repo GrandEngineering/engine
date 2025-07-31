@@ -27,6 +27,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 </sub>
+  
 ### Licences
 Licenses are granted on a individual entity basis, for person or entity, if you require a license please contact GrandEngineering at styly.smithing@gmail.com.
 Commercial licences may come with a fee, which may be one time or on a time basis.
