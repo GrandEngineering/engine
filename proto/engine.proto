@@ -1,6 +1,6 @@
 syntax = "proto3";
 package engine;
-service engine {
+service Engine {
   rpc AquireTask(TaskRequest) returns (Task);
   rpc AquireTaskReg(empty) returns (TaskRegistry);
   rpc PublishTask(Task) returns (empty);
