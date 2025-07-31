@@ -38,7 +38,7 @@ impl Engine for EngineService {
     ) -> Result<Response<proto::Empty>, Status> {
         let mut api = self.EngineAPI.write().await;
         let data = request.get_ref();
-        match (data.state()) {
+        match data.state() {
             TaskState::Processing => {
                 let query = api
                     .executing_tasks
@@ -48,8 +48,24 @@ impl Engine for EngineService {
 
                 query.retain(|f| f.id != data.id);
             }
-            TaskState::Solved => {}
-            TaskState::Queued => {}
+            TaskState::Solved => {
+                let query = api
+                    .solved_tasks
+                    .tasks
+                    .get_mut(&ID(&data.namespace, &data.task))
+                    .unwrap();
+
+                query.retain(|f| f.id != data.id);
+            }
+            TaskState::Queued => {
+                let query = api
+                    .task_queue
+                    .tasks
+                    .get_mut(&ID(&data.namespace, &data.task))
+                    .unwrap();
+
+                query.retain(|f| f.id != data.id);
+            }
         }
         return Ok(tonic::Response::new(proto::Empty {}));
     }
