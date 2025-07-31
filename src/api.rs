@@ -94,6 +94,7 @@ impl EngineAPI {
     }
     pub fn sync_db(api: &mut EngineAPI) {
         // IF THIS FN CAUSES PANIC SOMETHING IS VERY BROKEN
+
         let tasks_db = bincode::serialize(&api.task_queue.clone()).unwrap();
         api.db.insert("tasks", tasks_db).unwrap();
 
@@ -104,6 +105,7 @@ impl EngineAPI {
 
         let solved_tasks_db = bincode::serialize(&api.solved_tasks.clone()).unwrap();
         api.db.insert("solved_tasks", solved_tasks_db).unwrap();
+        debug!("Synced In memory db to File db");
     }
     fn init_db(api: &mut EngineAPI) {
         let tasks = api.db.get("tasks");
