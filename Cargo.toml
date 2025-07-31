@@ -17,13 +17,16 @@ colored = "3.0.0"
 druid = { git = "https://github.com/GrandEngineering/druid.git" }
 enginelib = { git = "https://github.com/GrandEngineering/enginelib.git" }
 # libloading = "0.8.6"
-prost = "0.13.5"
+prost = "0.14"
 serde = "1.0.219"
 # serde = "1.0.219"
-tokio = { features = ["rt-multi-thread"], version = "1.44.1" }
+tokio = { version = "1.44", features = ["rt-multi-thread", "macros"] }
 toml = "0.8.20"
 # toml = "0.8.19"
-tonic = "0.13"
-tonic-reflection = "0.13"
+tonic = "0.14"
+tonic-prost = "0.14.0"
+
+tonic-reflection = "0.14"
 [build-dependencies]
-tonic-build = "0.13"
+tonic-build = "0.14"
+tonic-prost-build = "0.14"

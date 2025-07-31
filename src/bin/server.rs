@@ -14,12 +14,13 @@ use proto::{
     engine_server::{Engine, EngineServer},
 };
 use std::{
+    collections::HashMap,
     env::consts::OS,
     io::Read,
     sync::{Arc, RwLock as RS_RwLock},
 };
 use tokio::sync::RwLock;
-use tonic::{Request, Status, metadata::MetadataValue, transport::Server};
+use tonic::{Request, Response, Status, metadata::MetadataValue, transport::Server};
 
 mod proto {
     tonic::include_proto!("engine");
@@ -32,6 +33,102 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn delete_task(
+        &self,
+        request: tonic::Request<proto::TaskSelector>,
+    ) -> Result<Response<proto::Empty>, Status> {
+        let mut api = self.EngineAPI.write().await;
+        let data = request.get_ref();
+        let id = ID(&data.namespace, &data.task);
+
+        // Generic helper for removing a task by id from a collection, using an id extractor closure
+        fn delete_task_from_collection<T, F>(
+            collection: &mut HashMap<(String, String), Vec<T>>,
+            id: &(String, String),
+            task_id: &str,
+            state_name: &str,
+            namespace: &str,
+            task: &str,
+            id_extractor: F,
+        ) -> Result<(), Status>
+        where
+            F: Fn(&T) -> &str,
+        {
+            match collection.get_mut(id) {
+                Some(query) => {
+                    let orig_len = query.len();
+                    query.retain(|f| id_extractor(f) != task_id);
+                    if query.len() == orig_len {
+                        info!(
+                            "DeleteTask: Task with id {} not found in {} state for namespace: {}, task: {}",
+                            task_id, state_name, namespace, task
+                        );
+                        return Err(Status::not_found(format!(
+                            "Task with id {} not found in {} state",
+                            task_id, state_name
+                        )));
+                    }
+                    Ok(())
+                }
+                None => {
+                    info!(
+                        "DeleteTask: No tasks found in {} state for namespace: {}, task: {}",
+                        state_name, namespace, task
+                    );
+                    Err(Status::not_found(format!(
+                        "No tasks found in {} state for given namespace and task",
+                        state_name
+                    )))
+                }
+            }
+        }
+
+        // Use the helper for each state
+        let result = match data.state() {
+            TaskState::Processing => delete_task_from_collection(
+                &mut api.executing_tasks.tasks,
+                &id,
+                &data.id,
+                "Processing",
+                &data.namespace,
+                &data.task,
+                |f| &f.id,
+            ),
+            TaskState::Solved => delete_task_from_collection(
+                &mut api.solved_tasks.tasks,
+                &id,
+                &data.id,
+                "Solved",
+                &data.namespace,
+                &data.task,
+                |f| &f.id,
+            ),
+            TaskState::Queued => delete_task_from_collection(
+                &mut api.task_queue.tasks,
+                &id,
+                &data.id,
+                "Queued",
+                &data.namespace,
+                &data.task,
+                |f| &f.id,
+            ),
+        };
+
+        if let Err(e) = result {
+            return Err(e);
+        }
+
+        // Sync running memory into DB
+        EngineAPI::sync_db(&mut api);
+        info!(
+            "DeleteTask: Successfully deleted task with id {} in state {:?} for namespace: {}, task: {}",
+            data.id,
+            data.state(),
+            data.namespace,
+            data.task
+        );
+        Ok(tonic::Response::new(proto::Empty {}))
+    }
     /// Retrieves a paginated list of tasks filtered by namespace, task name, and state.
     ///
     /// Authenticates the request and, if authorized, returns tasks in the specified state
@@ -155,7 +252,7 @@ impl Engine for EngineService {
             }
         };
         let index = data.page * data.page_size as u64;
-        let end = index + data.page_size as u64;
+        let end = index + (api.cfg.config_toml.pagination_limit.min(data.page_size) as u64);
         let final_vec: Vec<_> = q
             .iter()
             .skip(index as usize)
@@ -491,7 +588,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
-        .build_v1alpha()
+        .build_v1()
         .unwrap();
 
     Server::builder()
