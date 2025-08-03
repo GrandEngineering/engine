@@ -30,9 +30,8 @@ jobs:
         env:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: Swatinem/rust-cache@v2
-
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
 
       - name: Build
         run: cargo build --verbose
