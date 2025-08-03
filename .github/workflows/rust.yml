@@ -6,36 +6,29 @@ on:
   pull_request:
     branches: ["main"]
 
-permissions:
-  contents: read
-
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  build:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+  build_and_test:
+    name: Rust project - latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         toolchain:
           - stable
           - beta
           - nightly
-
     steps:
       - uses: actions/checkout@v4
-
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
-        env:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: Swatinem/rust-cache@v2
-
-      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
-
-      - name: Build
-        run: cargo build --verbose
-
-      - name: Run tests
-        run: cargo test --verbose
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.toolchain }}-
+      - run: cargo build --verbose
+      - run: cargo test --verbose
