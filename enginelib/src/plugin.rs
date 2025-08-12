@@ -106,7 +106,7 @@ impl LibraryManager {
         #[cfg(unix)]
         let library_path = tmp_path.join("mod.so");
         #[cfg(windows)]
-        let library_path = tmp_path.join("mod.so");
+        let library_path = tmp_path.join("mod.dll");
 
         if let Some(lib_path_str) = library_path.to_str() {
             debug!("Extracted library path: {}", lib_path_str);

@@ -622,7 +622,7 @@ dependencies = [
  "clap_complete",
  "colored",
  "druid",
- "enginelib",
+ "enginelib 0.2.0 (git+https://github.com/GrandEngineering/enginelib.git)",
  "prost",
  "serde",
  "tokio",
@@ -637,13 +637,33 @@ dependencies = [
 [[package]]
 name = "enginelib"
 version = "0.2.0"
+dependencies = [
+ "bincode",
+ "chrono",
+ "directories",
+ "libloading",
+ "macros 0.1.0",
+ "oxifs",
+ "serde",
+ "sled",
+ "tokio",
+ "toml",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-test",
+ "vergen-gix",
+]
+
+[[package]]
+name = "enginelib"
+version = "0.2.0"
 source = "git+https://github.com/GrandEngineering/enginelib.git#c45e7fcd79e50fcab0b2a7baec012e00dede6f07"
 dependencies = [
  "bincode",
  "chrono",
  "directories",
  "libloading",
- "macros",
+ "macros 0.1.0 (git+https://github.com/GrandEngineering/enginelib.git)",
  "oxifs",
  "serde",
  "sled",
@@ -2151,6 +2171,15 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+
+[[package]]
+name = "macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "macros"
