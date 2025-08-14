@@ -33,14 +33,35 @@ struct EngineService {
 }
 #[tonic::async_trait]
 impl Engine for EngineService {
+    async fn check_auth(
+        &self,
+        request: tonic::Request<proto::Empty>,
+    ) -> Result<Response<proto::Empty>, Status> {
+        let challenge = get_auth(&request);
+        let mut api = self.EngineAPI.write().await;
+        let db = api.db.clone();
+        let output = Events::CheckAdminAuth(&mut api, challenge, ("".into(), "".into()), db);
+        if !output {
+            warn!("Auth check failed - permission denied");
+            return Err(tonic::Status::permission_denied("Invalid Auth"));
+        };
+        return Ok(tonic::Response::new(proto::Empty {}));
+    }
     async fn delete_task(
         &self,
         request: tonic::Request<proto::TaskSelector>,
     ) -> Result<Response<proto::Empty>, Status> {
         let mut api = self.EngineAPI.write().await;
         let data = request.get_ref();
+        let challenge = get_auth(&request);
+        let db = api.db.clone();
         let id = ID(&data.namespace, &data.task);
 
+        let output = Events::CheckAdminAuth(&mut api, challenge, ("".into(), "".into()), db);
+        if !output {
+            warn!("Auth check failed - permission denied");
+            return Err(tonic::Status::permission_denied("Invalid Auth"));
+        };
         // Generic helper for removing a task by id from a collection, using an id extractor closure
         fn delete_task_from_collection<T, F>(
             collection: &mut HashMap<(String, String), Vec<T>>,
@@ -158,10 +179,9 @@ impl Engine for EngineService {
     ) -> std::result::Result<tonic::Response<proto::TaskPage>, tonic::Status> {
         let mut api = self.EngineAPI.write().await;
         let challenge = get_auth(&request);
-        let uid = get_uid(&request);
+
         let db = api.db.clone();
-        if !Events::CheckAuth(&mut api, uid, challenge, db) {
-            //TODO: change to AdminSpecific Auth
+        if !Events::CheckAdminAuth(&mut api, challenge, ("".into(), "".into()), db) {
             info!("GetTask denied due to Invalid Auth");
             return Err(Status::permission_denied("Invalid authentication"));
         };
@@ -581,7 +601,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     EngineAPI::init(&mut api);
     Events::init_auth(&mut api);
     Events::StartEvent(&mut api);
-    let addr = api.cfg.config_toml.port.parse().unwrap();
+    let addr = api.cfg.config_toml.host.parse().unwrap();
     let apii = Arc::new(RwLock::new(api));
     EngineAPI::init_chron(apii.clone());
     let engine = EngineService { EngineAPI: apii };
