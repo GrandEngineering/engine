@@ -8,6 +8,7 @@ service Engine {
   rpc CreateTask(Task) returns (Task);
   rpc DeleteTask(TaskSelector) returns (empty);
   rpc GetTasks(TaskPageRequest) returns (TaskPage);
+  rpc CheckAuth(empty) returns (empty);
 }
 message TaskSelector {
   TaskState state = 1;

@@ -1,5 +1,7 @@
 use std::{any::Any, process, sync::Arc};
 
+use tracing::info;
+
 use crate::{
     Identifier,
     api::EngineAPI,
@@ -19,6 +21,7 @@ pub struct StartEvent {
 impl Events {
     pub fn StartEvent(api: &mut EngineAPI) {
         let lib_manager = api.lib_manager.clone();
+        info!("Started on {}", api.cfg.config_toml.host);
         api.event_bus.handle(
             ID("core", "start_event"),
             &mut StartEvent {

@@ -76,13 +76,6 @@ pub enum Runner {
     CPU,
 }
 
-pub trait TaskRegistry: Default + Clone {
-    fn register(&mut self, task: Arc<dyn Task>, identifier: Identifier);
-    fn get(&self, mod_id: String, identifier: String) -> Option<&dyn Task>;
-    fn serialize(&self) -> Vec<u8>;
-    fn deserialize(bytes: &[u8]) -> Vec<Identifier>;
-}
-
 impl Clone for Box<dyn Task> {
     fn clone(&self) -> Box<dyn Task> {
         self.clone_box()
