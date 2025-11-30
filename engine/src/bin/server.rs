@@ -17,6 +17,7 @@ use std::{
     collections::HashMap,
     env::consts::OS,
     io::Read,
+    net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4},
     sync::{Arc, RwLock as RS_RwLock},
 };
 use tokio::sync::RwLock;
@@ -343,7 +344,13 @@ impl Engine for EngineService {
             out.clone(),
         );
         let mut res = request.get_ref().clone();
-        res.event_payload = out.read().unwrap().clone();
+        res.event_payload = match out.read() {
+            Ok(g) => g.clone(),
+            Err(_) => {
+                warn!("CGRPC response lock poisoned, returning empty payload");
+                Vec::new()
+            }
+        };
         info!("CGRPC request processed successfully");
         return Ok(tonic::Response::new(res));
     }
@@ -421,37 +428,52 @@ impl Engine for EngineService {
             );
             return Err(Status::invalid_argument("Task Does not Exist"));
         }
-        let mut map = api
-            .task_queue
-            .tasks
-            .get(&ID(namespace, task_name))
-            .unwrap()
-            .clone();
-        let ttask = map.first().unwrap().clone();
+        let key = ID(namespace, task_name);
+        let mut map = match api.task_queue.tasks.get(&key) {
+            Some(v) if !v.is_empty() => v.clone(),
+            _ => {
+                info!("No queued tasks for {}:{}", namespace, task_name);
+                return Err(Status::not_found("No queued tasks available"));
+            }
+        };
+        let ttask = map.remove(0);
         let task_payload = ttask.bytes.clone();
-        map.remove(0);
         // Get Task and remove it from queue
-        api.task_queue.tasks.insert(ID(namespace, task_name), map);
-        let store = bincode::serialize(&api.task_queue.clone()).unwrap();
-        api.db.insert("tasks", store).unwrap();
+        api.task_queue.tasks.insert(key.clone(), map);
+        match bincode::serialize(&api.task_queue.clone()) {
+            Ok(store) => {
+                if let Err(e) = api.db.insert("tasks", store) {
+                    return Err(Status::internal(format!("DB insert error: {}", e)));
+                }
+            }
+            Err(e) => {
+                return Err(Status::internal(format!("Serialization error: {}", e)));
+            }
+        }
         // Move it to exec queue
         let mut exec_tsks = api
             .executing_tasks
             .tasks
-            .get(&ID(namespace, task_name))
-            .unwrap()
-            .clone();
+            .get(&key)
+            .cloned()
+            .unwrap_or_default();
         exec_tsks.push(enginelib::task::StoredExecutingTask {
             bytes: task_payload.clone(),
             user_id: uid.clone(),
             given_at: Utc::now(),
             id: ttask.id.clone(),
         });
-        api.executing_tasks
-            .tasks
-            .insert(ID(namespace, task_name), exec_tsks);
-        let store = bincode::serialize(&api.executing_tasks.clone()).unwrap();
-        api.db.insert("executing_tasks", store).unwrap();
+        api.executing_tasks.tasks.insert(key.clone(), exec_tsks);
+        match bincode::serialize(&api.executing_tasks.clone()) {
+            Ok(store) => {
+                if let Err(e) = api.db.insert("executing_tasks", store) {
+                    return Err(Status::internal(format!("DB insert error: {}", e)));
+                }
+            }
+            Err(e) => {
+                return Err(Status::internal(format!("Serialization error: {}", e)));
+            }
+        }
         let response = proto::Task {
             id: ttask.id,
             task_id: input.task_id.clone(),
@@ -492,21 +514,24 @@ impl Engine for EngineService {
             );
             return Err(Status::invalid_argument("Task Does not Exist"));
         }
+        let key = ID(namespace, task_name);
         let mem_tsk = api
             .executing_tasks
             .tasks
-            .get(&ID(namespace, task_name))
-            .unwrap()
-            .clone();
-        let tsk = mem_tsk
+            .get(&key)
+            .cloned()
+            .unwrap_or_default();
+        let tsk_opt = mem_tsk
             .iter()
             .find(|f| f.id == task_id.clone() && f.user_id == uid.clone());
-        if let Some(tsk) = tsk {
-            let reg_tsk = api
-                .task_registry
-                .get(&ID(namespace, task_name))
-                .unwrap()
-                .clone();
+        if let Some(tsk) = tsk_opt {
+            let reg_tsk = match api.task_registry.get(&key) {
+                Some(r) => r.clone(),
+                None => {
+                    warn!("Task registry missing for {}:{}", namespace, task_name);
+                    return Err(Status::invalid_argument("Task Does not Exist"));
+                }
+            };
             if !reg_tsk.verify(request.get_ref().task_payload.clone()) {
                 info!("Failed to parse task");
                 return Err(Status::invalid_argument("Failed to parse given task bytes"));
@@ -516,28 +541,37 @@ impl Engine for EngineService {
             nmem_tsk.retain(|f| f.id != task_id.clone() && f.user_id != uid.clone());
             api.executing_tasks
                 .tasks
-                .insert(ID(namespace, task_name), nmem_tsk.clone());
+                .insert(key.clone(), nmem_tsk.clone());
             let t_mem_execs = api.executing_tasks.clone();
-            api.db
-                .insert("executing_tasks", bincode::serialize(&t_mem_execs).unwrap())
-                .unwrap();
+            match bincode::serialize(&t_mem_execs) {
+                Ok(store) => {
+                    if let Err(e) = api.db.insert("executing_tasks", store) {
+                        return Err(Status::internal(format!("DB insert error: {}", e)));
+                    }
+                }
+                Err(e) => return Err(Status::internal(format!("Serialization error: {}", e))),
+            }
             // tsk-> solved Tsks
             let mut mem_solv = api
                 .solved_tasks
                 .tasks
-                .get(&ID(namespace, task_name))
-                .unwrap()
-                .clone();
+                .get(&key)
+                .cloned()
+                .unwrap_or_default();
             mem_solv.push(enginelib::task::StoredTask {
                 bytes: tsk.bytes.clone(),
                 id: tsk.id.clone(),
             });
-            api.solved_tasks
-                .tasks
-                .insert(ID(namespace, task_name), mem_solv);
+            api.solved_tasks.tasks.insert(key.clone(), mem_solv);
             // Solved tsks -> DB
-            let e_solv = bincode::serialize(&api.solved_tasks.tasks).unwrap();
-            api.db.insert("solved_tasks", e_solv).unwrap();
+            match bincode::serialize(&api.solved_tasks.tasks) {
+                Ok(e_solv) => {
+                    if let Err(e) = api.db.insert("solved_tasks", e_solv) {
+                        return Err(Status::internal(format!("DB insert error: {}", e)));
+                    }
+                }
+                Err(e) => return Err(Status::internal(format!("Serialization error: {}", e))),
+            }
             info!("Task published successfully: {} by user: {}", task_id, uid);
             return Ok(tonic::Response::new(proto::Empty {}));
         } else {
@@ -559,10 +593,13 @@ impl Engine for EngineService {
         };
         let task = request.get_ref();
         let task_id = task.task_id.clone();
-        let id: Identifier = (
-            task_id.split(":").collect::<Vec<&str>>()[0].to_string(),
-            task_id.split(":").collect::<Vec<&str>>()[1].to_string(),
-        );
+        let parts: Vec<&str> = task_id.splitn(2, ':').collect();
+        if parts.len() != 2 || parts[0].is_empty() || parts[1].is_empty() {
+            return Err(Status::invalid_argument(
+                "Invalid task ID format, expected 'namespace:task'",
+            ));
+        }
+        let id: Identifier = (parts[0].to_string(), parts[1].to_string());
         let tsk_reg = api.task_registry.get(&id);
         if let Some(tsk_reg) = tsk_reg {
             if !tsk_reg.clone().verify(task.task_payload.clone()) {
@@ -574,16 +611,18 @@ impl Engine for EngineService {
                 id: druid::Druid::default().to_hex(),
             };
             let mut mem_tsks = api.task_queue.clone();
-            let mut mem_tsk = mem_tsks.tasks.get(&id).unwrap().clone();
+            let mut mem_tsk = mem_tsks.tasks.get(&id).cloned().unwrap_or_default();
             mem_tsk.push(tbp_tsk.clone());
             mem_tsks.tasks.insert(id.clone(), mem_tsk);
             api.task_queue = mem_tsks;
-            api.db
-                .insert(
-                    "tasks",
-                    bincode::serialize(&api.task_queue.clone()).unwrap(),
-                )
-                .unwrap();
+            match bincode::serialize(&api.task_queue.clone()) {
+                Ok(store) => {
+                    if let Err(e) = api.db.insert("tasks", store) {
+                        return Err(Status::internal(format!("DB insert error: {}", e)));
+                    }
+                }
+                Err(e) => return Err(Status::internal(format!("Serialization error: {}", e))),
+            }
             return Ok(tonic::Response::new(proto::Task {
                 id: tbp_tsk.id.clone(),
                 task_id: task_id.clone(),
@@ -601,21 +640,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     EngineAPI::init(&mut api);
     Events::init_auth(&mut api);
     Events::StartEvent(&mut api);
-    let addr = api.cfg.config_toml.host.parse().unwrap();
+    let addr = api
+        .cfg
+        .config_toml
+        .host
+        .parse()
+        .unwrap_or(SocketAddr::V4(SocketAddrV4::new(
+            Ipv4Addr::new(127, 0, 0, 1),
+            50051,
+        )));
     let apii = Arc::new(RwLock::new(api));
     EngineAPI::init_chron(apii.clone());
     let engine = EngineService { EngineAPI: apii };
 
+    // Build reflection service, mapping its concrete error into Box<dyn Error>
     let reflection_service = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(proto::FILE_DESCRIPTOR_SET)
         .build_v1()
-        .unwrap();
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
+    // Start server and map transport errors into Box<dyn Error> so `?` works with our return type.
     Server::builder()
         .add_service(reflection_service)
         .add_service(EngineServer::new(engine))
         .serve(addr)
-        .await?;
+        .await
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
 
     Ok(())
 }
