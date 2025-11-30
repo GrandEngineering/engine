@@ -110,69 +110,167 @@ async fn main() {
                     buf.push(unw);
                 }
                 let ns = buf.join("\n");
-                let mut file = File::create("schema.rustforge.toml").unwrap();
-                file.write_all(ns.as_bytes()).unwrap();
+                match File::create("schema.rustforge.toml") {
+                    Ok(mut file) => {
+                        if let Err(e) = file.write_all(ns.as_bytes()) {
+                            error!("Failed to write schema file: {}", e);
+                        } else {
+                            info!("Wrote schema.rustforge.toml");
+                        }
+                    }
+                    Err(e) => {
+                        error!("Failed to create schema file: {}", e);
+                    }
+                }
             }
             Commands::Unpack(input) => {
                 if input.input.exists() {
                     let mut final_out: Vec<String> = Vec::new();
                     info!("Unpacking File: {}", input.input.to_string_lossy());
                     let mut buf = Vec::new();
-                    File::open(input.input)
-                        .unwrap()
-                        .read_to_end(&mut buf)
-                        .unwrap();
-                    let k: TaskQueue = bincode::deserialize(&buf).unwrap();
-                    for tasks in k.tasks {
-                        let tt = api.task_registry.tasks.get(&tasks.0.clone()).unwrap();
-                        for task in tasks.1 {
-                            if tt.verify(task.bytes.clone()) {
-                                let tmp_nt = tt.from_bytes(&task.bytes);
-                                final_out.push(format![
-                                    r#"[["{}:{}"]]"#,
-                                    tasks.0.0.clone(),
-                                    tasks.0.1.clone()
-                                ]);
-                                final_out.push(tmp_nt.to_toml());
-                                info!("{:?}", tmp_nt);
-                            };
+                    match File::open(&input.input) {
+                        Ok(mut f) => {
+                            if let Err(e) = f.read_to_end(&mut buf) {
+                                error!(
+                                    "Failed to read input file {}: {}",
+                                    input.input.display(),
+                                    e
+                                );
+                            } else {
+                                match bincode::deserialize::<TaskQueue>(&buf) {
+                                    Ok(k) => {
+                                        for tasks in k.tasks {
+                                            match api.task_registry.tasks.get(&tasks.0.clone()) {
+                                                Some(tt) => {
+                                                    for task in tasks.1 {
+                                                        if tt.verify(task.bytes.clone()) {
+                                                            let tmp_nt = tt.from_bytes(&task.bytes);
+                                                            final_out.push(format![
+                                                                r#"[["{}:{}"]]"#,
+                                                                tasks.0.0.clone(),
+                                                                tasks.0.1.clone()
+                                                            ]);
+                                                            final_out.push(tmp_nt.to_toml());
+                                                            info!("{:?}", tmp_nt);
+                                                        }
+                                                    }
+                                                }
+                                                None => {
+                                                    error!(
+                                                        "Unknown template for {}:{}",
+                                                        tasks.0.0, tasks.0.1
+                                                    );
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        error!("Failed to deserialize task queue: {}", e);
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to open input file {}: {}", input.input.display(), e);
                         }
                     }
                     let ns = final_out.join("\n");
-                    let mut file = File::create("output.rustforge.toml").unwrap();
-                    file.write_all(ns.as_bytes()).unwrap();
+                    match File::create("output.rustforge.toml") {
+                        Ok(mut file) => {
+                            if let Err(e) = file.write_all(ns.as_bytes()) {
+                                error!("Failed to write output.rustforge.toml: {}", e);
+                            } else {
+                                info!("Wrote output.rustforge.toml");
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to create output.rustforge.toml: {}", e);
+                        }
+                    }
                 }
             }
             Commands::Pack(input) => {
                 if input.input.exists() {
                     info!("Packing File: {}", input.input.to_string_lossy());
-                    let toml_str = std::fs::read_to_string(input.input).unwrap();
-                    let raw: RawDoc = toml::from_str(&toml_str).unwrap();
-                    let entries = parse_entries(raw);
-                    for entry in entries {
-                        let template = api
-                            .task_registry
-                            .get(&ID(entry.namespace.as_str(), entry.id.as_str()))
-                            .unwrap();
-                        let toml_string = toml::to_string(&entry.data).unwrap();
-                        let t = template.from_toml(toml_string);
-                        let mut tmp = api
-                            .task_queue
-                            .tasks
-                            .get(&ID(entry.namespace.as_str(), entry.id.as_str()))
-                            .unwrap()
-                            .clone();
-                        tmp.push(StoredTask {
-                            id: "".into(), //ids are minted on the server
-                            bytes: t.to_bytes(),
-                        });
-                        api.task_queue
-                            .tasks
-                            .insert(ID(entry.namespace.as_str(), entry.id.as_str()), tmp);
+                    match std::fs::read_to_string(&input.input) {
+                        Ok(toml_str) => {
+                            match toml::from_str::<RawDoc>(&toml_str) {
+                                Ok(raw) => {
+                                    let entries = parse_entries(raw);
+                                    for entry in entries {
+                                        match api
+                                            .task_registry
+                                            .get(&ID(entry.namespace.as_str(), entry.id.as_str()))
+                                        {
+                                            Some(template) => {
+                                                match toml::to_string(&entry.data) {
+                                                    Ok(toml_string) => {
+                                                        let t = template.from_toml(toml_string);
+                                                        let key = ID(
+                                                            entry.namespace.as_str(),
+                                                            entry.id.as_str(),
+                                                        );
+                                                        let mut vec = api
+                                                            .task_queue
+                                                            .tasks
+                                                            .get(&key)
+                                                            .cloned()
+                                                            .unwrap_or_default();
+                                                        vec.push(StoredTask {
+                                                            id: "".into(), //ids are minted on the server
+                                                            bytes: t.to_bytes(),
+                                                        });
+                                                        api.task_queue.tasks.insert(key, vec);
+                                                    }
+                                                    Err(e) => {
+                                                        error!(
+                                                            "Failed to convert entry data to TOML string: {}",
+                                                            e
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                            None => {
+                                                error!(
+                                                    "Template not found for {}:{}",
+                                                    entry.namespace, entry.id
+                                                );
+                                            }
+                                        }
+                                    }
+                                    match bincode::serialize(&api.task_queue) {
+                                        Ok(data) => match File::create("output.rustforge.bin") {
+                                            Ok(mut file) => {
+                                                if let Err(e) = file.write_all(&data) {
+                                                    error!(
+                                                        "Failed to write output.rustforge.bin: {}",
+                                                        e
+                                                    );
+                                                } else {
+                                                    info!("Wrote output.rustforge.bin");
+                                                }
+                                            }
+                                            Err(e) => {
+                                                error!(
+                                                    "Failed to create output.rustforge.bin: {}",
+                                                    e
+                                                );
+                                            }
+                                        },
+                                        Err(e) => {
+                                            error!("Failed to serialize task queue: {}", e);
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    error!("Failed to parse input TOML: {}", e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to read input file {}: {}", input.input.display(), e);
+                        }
                     }
-                    let data = bincode::serialize(&api.task_queue).unwrap();
-                    let mut file = File::create("output.rustforge.bin").unwrap();
-                    file.write_all(&data).unwrap();
                 } else {
                     error!("File does not exist: {}", input.input.to_string_lossy())
                 }
