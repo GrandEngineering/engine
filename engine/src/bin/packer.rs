@@ -125,9 +125,11 @@ async fn main() {
             }
             Commands::Unpack(input) => {
                 if input.input.exists() {
-                    let mut final_out: Vec<String> = Vec::new();
                     info!("Unpacking File: {}", input.input.to_string_lossy());
                     let mut buf = Vec::new();
+
+                    // Attempt to open and read the input file. If either step fails,
+                    // we do not proceed to deserialization or writing the output file.
                     match File::open(&input.input) {
                         Ok(mut f) => {
                             if let Err(e) = f.read_to_end(&mut buf) {
@@ -136,56 +138,69 @@ async fn main() {
                                     input.input.display(),
                                     e
                                 );
-                            } else {
-                                match bincode::deserialize::<TaskQueue>(&buf) {
-                                    Ok(k) => {
-                                        for tasks in k.tasks {
-                                            match api.task_registry.tasks.get(&tasks.0.clone()) {
-                                                Some(tt) => {
-                                                    for task in tasks.1 {
-                                                        if tt.verify(task.bytes.clone()) {
-                                                            let tmp_nt = tt.from_bytes(&task.bytes);
-                                                            final_out.push(format![
-                                                                r#"[["{}:{}"]]"#,
-                                                                tasks.0.0.clone(),
-                                                                tasks.0.1.clone()
-                                                            ]);
-                                                            final_out.push(tmp_nt.to_toml());
-                                                            info!("{:?}", tmp_nt);
-                                                        }
-                                                    }
-                                                }
-                                                None => {
-                                                    error!(
-                                                        "Unknown template for {}:{}",
-                                                        tasks.0.0, tasks.0.1
-                                                    );
-                                                }
-                                            }
-                                        }
-                                    }
-                                    Err(e) => {
-                                        error!("Failed to deserialize task queue: {}", e);
-                                    }
-                                }
+                                // reading failed -> do not proceed to deserialize or write
+                                return;
                             }
                         }
                         Err(e) => {
                             error!("Failed to open input file {}: {}", input.input.display(), e);
+                            // opening failed -> do not proceed to deserialize or write
+                            return;
                         }
                     }
-                    let ns = final_out.join("\n");
-                    match File::create("output.rustforge.toml") {
-                        Ok(mut file) => {
-                            if let Err(e) = file.write_all(ns.as_bytes()) {
-                                error!("Failed to write output.rustforge.toml: {}", e);
-                            } else {
-                                info!("Wrote output.rustforge.toml");
+
+                    // Try to deserialize. Only on successful deserialization do we
+                    // process entries and write the output TOML file.
+                    let maybe_queue: Option<TaskQueue> =
+                        match bincode::deserialize::<TaskQueue>(&buf) {
+                            Ok(k) => Some(k),
+                            Err(e) => {
+                                error!("Failed to deserialize task queue: {}", e);
+                                None
+                            }
+                        };
+
+                    if let Some(k) = maybe_queue {
+                        let mut final_out: Vec<String> = Vec::new();
+
+                        for tasks in k.tasks {
+                            match api.task_registry.tasks.get(&tasks.0.clone()) {
+                                Some(tt) => {
+                                    for task in tasks.1 {
+                                        if tt.verify(task.bytes.clone()) {
+                                            let tmp_nt = tt.from_bytes(&task.bytes);
+                                            final_out.push(format![
+                                                r#"[["{}:{}"]]"#,
+                                                tasks.0.0.clone(),
+                                                tasks.0.1.clone()
+                                            ]);
+                                            final_out.push(tmp_nt.to_toml());
+                                            info!("{:?}", tmp_nt);
+                                        }
+                                    }
+                                }
+                                None => {
+                                    error!("Unknown template for {}:{}", tasks.0.0, tasks.0.1);
+                                }
                             }
                         }
-                        Err(e) => {
-                            error!("Failed to create output.rustforge.toml: {}", e);
+
+                        let ns = final_out.join("\n");
+                        match File::create("output.rustforge.toml") {
+                            Ok(mut file) => {
+                                if let Err(e) = file.write_all(ns.as_bytes()) {
+                                    error!("Failed to write output.rustforge.toml: {}", e);
+                                } else {
+                                    info!("Wrote output.rustforge.toml");
+                                }
+                            }
+                            Err(e) => {
+                                error!("Failed to create output.rustforge.toml: {}", e);
+                            }
                         }
+                    } else {
+                        // Deserialization failed; we logged the error above and intentionally do not
+                        // create/write the output file to avoid producing an empty output.
                     }
                 }
             }
