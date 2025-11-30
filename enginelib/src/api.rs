@@ -15,8 +15,8 @@ use crate::{
     plugin::LibraryManager,
     task::{ExecutingTaskQueue, SolvedTasks, StoredTask, Task, TaskQueue},
 };
-pub use bincode::deserialize;
-pub use bincode::serialize;
+pub use postcard::from_bytes;
+pub use postcard::to_allocvec;
 use std::{collections::HashMap, sync::Arc, time::Duration};
 pub struct EngineAPI {
     pub cfg: Config,
@@ -95,15 +95,15 @@ impl EngineAPI {
     pub fn sync_db(api: &mut EngineAPI) {
         // IF THIS FN CAUSES PANIC SOMETHING IS VERY BROKEN
 
-        let tasks_db = bincode::serialize(&api.task_queue.clone()).unwrap();
+        let tasks_db = postcard::to_allocvec(&api.task_queue.clone()).unwrap();
         api.db.insert("tasks", tasks_db).unwrap();
 
-        let executing_tasks_db = bincode::serialize(&api.executing_tasks.clone()).unwrap();
+        let executing_tasks_db = postcard::to_allocvec(&api.executing_tasks.clone()).unwrap();
         api.db
             .insert("executing_tasks", executing_tasks_db)
             .unwrap();
 
-        let solved_tasks_db = bincode::serialize(&api.solved_tasks.clone()).unwrap();
+        let solved_tasks_db = postcard::to_allocvec(&api.solved_tasks.clone()).unwrap();
         api.db.insert("solved_tasks", solved_tasks_db).unwrap();
         debug!("Synced In memory db to File db");
     }
@@ -112,27 +112,27 @@ impl EngineAPI {
         let exec_tasks = api.db.get("executing_tasks");
         let solved_tasks = api.db.get("solved_tasks");
         if tasks.is_err() || tasks.unwrap().is_none() {
-            let store = bincode::serialize(&api.task_queue.clone()).unwrap();
+            let store = postcard::to_allocvec(&api.task_queue.clone()).unwrap();
             api.db.insert("tasks", store).unwrap();
         } else {
             let store = api.db.get("tasks").unwrap().unwrap();
-            let res: TaskQueue = bincode::deserialize(&store).unwrap();
+            let res: TaskQueue = postcard::from_bytes(&store).unwrap();
             api.task_queue = res;
         }
         if exec_tasks.is_err() || exec_tasks.unwrap().is_none() {
-            let store = bincode::serialize(&api.executing_tasks.clone()).unwrap();
+            let store = postcard::to_allocvec(&api.executing_tasks.clone()).unwrap();
             api.db.insert("executing_tasks", store).unwrap();
         } else {
             let store = api.db.get("executing_tasks").unwrap().unwrap();
-            let res: ExecutingTaskQueue = bincode::deserialize(&store).unwrap();
+            let res: ExecutingTaskQueue = postcard::from_bytes(&store).unwrap();
             api.executing_tasks = res;
         };
         if solved_tasks.is_err() || solved_tasks.unwrap().is_none() {
-            let store = bincode::serialize(&api.solved_tasks.clone()).unwrap();
+            let store = postcard::to_allocvec(&api.solved_tasks.clone()).unwrap();
             api.db.insert("solved_tasks", store).unwrap();
         } else {
             let store = api.db.get("solved_tasks").unwrap().unwrap();
-            let res: SolvedTasks = bincode::deserialize(&store).unwrap();
+            let res: SolvedTasks = postcard::from_bytes(&store).unwrap();
             api.solved_tasks = res;
         };
     }
@@ -195,7 +195,7 @@ pub async fn clear_sled_periodically(api: Arc<RwLock<EngineAPI>>, n_minutes: u64
         let db = rw_api.db.clone();
         // Load "executing_tasks"
         if let Ok(Some(tsks)) = db.get("executing_tasks") {
-            if let Ok(mut s) = bincode::deserialize::<ExecutingTaskQueue>(&tsks) {
+            if let Ok(mut s) = postcard::from_bytes::<ExecutingTaskQueue>(&tsks) {
                 for ((key1, key2), task_list) in s.tasks.iter_mut() {
                     task_list.retain(|info| {
                         let age = now - info.given_at.timestamp();
@@ -217,7 +217,7 @@ pub async fn clear_sled_periodically(api: Arc<RwLock<EngineAPI>>, n_minutes: u64
                 }
 
                 // Save updated "executing_tasks"
-                if let Ok(updated) = bincode::serialize(&s) {
+                if let Ok(updated) = postcard::to_allocvec(&s) {
                     if let Err(e) = db.insert("executing_tasks", updated) {
                         error!("Failed to update executing_tasks in Sled: {:?}", e);
                     }
@@ -232,7 +232,7 @@ pub async fn clear_sled_periodically(api: Arc<RwLock<EngineAPI>>, n_minutes: u64
             };
 
             if let Ok(Some(saved_tsks)) = db.get("tasks") {
-                if let Ok(existing_tasks) = bincode::deserialize::<TaskQueue>(&saved_tsks) {
+                if let Ok(existing_tasks) = postcard::from_bytes::<TaskQueue>(&saved_tsks) {
                     saved_tasks = existing_tasks;
                 }
             }
@@ -247,7 +247,7 @@ pub async fn clear_sled_periodically(api: Arc<RwLock<EngineAPI>>, n_minutes: u64
             }
 
             // Save updated "tasks" queue
-            if let Ok(updated) = bincode::serialize(&saved_tasks) {
+            if let Ok(updated) = postcard::to_allocvec(&saved_tasks) {
                 if let Err(e) = db.insert("tasks", updated) {
                     error!("Failed to update tasks in Sled: {:?}", e);
                 }

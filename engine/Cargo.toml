@@ -9,7 +9,7 @@ description = "A Blazingly fast distributed task system"
 default = []
 dev = []
 [dependencies]
-bincode = "1.3.3"
+postcard = { version = "1.1.3", features = ["use-std"] }
 clap = { version = "4.5.53", features = ["derive"] }
 clap_complete = "4.5.61"
 colored = "3.0.0"

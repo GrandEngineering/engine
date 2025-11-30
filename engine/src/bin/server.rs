@@ -1,4 +1,3 @@
-use bincode::serialize;
 use engine::{get_auth, get_uid};
 use enginelib::{
     Identifier, RawIdentier, Registry,
@@ -9,6 +8,7 @@ use enginelib::{
     plugin::LibraryManager,
     task::{SolvedTasks, StoredExecutingTask, StoredTask, Task, TaskQueue},
 };
+use postcard::to_allocvec;
 use proto::{
     TaskState,
     engine_server::{Engine, EngineServer},
@@ -440,7 +440,7 @@ impl Engine for EngineService {
         let task_payload = ttask.bytes.clone();
         // Get Task and remove it from queue
         api.task_queue.tasks.insert(key.clone(), map);
-        match bincode::serialize(&api.task_queue.clone()) {
+        match postcard::to_allocvec(&api.task_queue.clone()) {
             Ok(store) => {
                 if let Err(e) = api.db.insert("tasks", store) {
                     return Err(Status::internal(format!("DB insert error: {}", e)));
@@ -464,7 +464,7 @@ impl Engine for EngineService {
             id: ttask.id.clone(),
         });
         api.executing_tasks.tasks.insert(key.clone(), exec_tsks);
-        match bincode::serialize(&api.executing_tasks.clone()) {
+        match postcard::to_allocvec(&api.executing_tasks.clone()) {
             Ok(store) => {
                 if let Err(e) = api.db.insert("executing_tasks", store) {
                     return Err(Status::internal(format!("DB insert error: {}", e)));
@@ -543,7 +543,7 @@ impl Engine for EngineService {
                 .tasks
                 .insert(key.clone(), nmem_tsk.clone());
             let t_mem_execs = api.executing_tasks.clone();
-            match bincode::serialize(&t_mem_execs) {
+            match postcard::to_allocvec(&t_mem_execs) {
                 Ok(store) => {
                     if let Err(e) = api.db.insert("executing_tasks", store) {
                         return Err(Status::internal(format!("DB insert error: {}", e)));
@@ -564,7 +564,7 @@ impl Engine for EngineService {
             });
             api.solved_tasks.tasks.insert(key.clone(), mem_solv);
             // Solved tsks -> DB
-            match bincode::serialize(&api.solved_tasks.tasks) {
+            match postcard::to_allocvec(&api.solved_tasks.tasks) {
                 Ok(e_solv) => {
                     if let Err(e) = api.db.insert("solved_tasks", e_solv) {
                         return Err(Status::internal(format!("DB insert error: {}", e)));
@@ -615,7 +615,7 @@ impl Engine for EngineService {
             mem_tsk.push(tbp_tsk.clone());
             mem_tsks.tasks.insert(id.clone(), mem_tsk);
             api.task_queue = mem_tsks;
-            match bincode::serialize(&api.task_queue.clone()) {
+            match postcard::to_allocvec(&api.task_queue.clone()) {
                 Ok(store) => {
                     if let Err(e) = api.db.insert("tasks", store) {
                         return Err(Status::internal(format!("DB insert error: {}", e)));

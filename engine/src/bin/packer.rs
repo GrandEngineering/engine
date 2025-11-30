@@ -152,7 +152,7 @@ async fn main() {
                     // Try to deserialize. Only on successful deserialization do we
                     // process entries and write the output TOML file.
                     let maybe_queue: Option<TaskQueue> =
-                        match bincode::deserialize::<TaskQueue>(&buf) {
+                        match postcard::from_bytes::<TaskQueue>(&buf) {
                             Ok(k) => Some(k),
                             Err(e) => {
                                 error!("Failed to deserialize task queue: {}", e);
@@ -253,7 +253,7 @@ async fn main() {
                                             }
                                         }
                                     }
-                                    match bincode::serialize(&api.task_queue) {
+                                    match postcard::to_allocvec(&api.task_queue) {
                                         Ok(data) => match File::create("output.rustforge.bin") {
                                             Ok(mut file) => {
                                                 if let Err(e) = file.write_all(&data) {
