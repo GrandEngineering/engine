@@ -1,3 +1,6 @@
 [workspace]
 resolver = "3"
 members = ["engine", "enginelib", "enginelib/macros"]
+[workspace.dependencies]
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "0.9.8"
