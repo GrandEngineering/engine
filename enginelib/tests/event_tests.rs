@@ -111,10 +111,10 @@ fn test_task_registration() {
             self.value += 1;
         }
         fn to_bytes(&self) -> Vec<u8> {
-            bincode::serialize(self).unwrap()
+            postcard::to_allocvec(self).unwrap()
         }
         fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task> {
-            Box::new(bincode::deserialize::<TestTask>(bytes).unwrap())
+            Box::new(postcard::from_bytes::<TestTask>(bytes).unwrap())
         }
         fn from_toml(&self, d: String) -> Box<dyn Task> {
             return Box::new(self.clone());
@@ -166,10 +166,10 @@ fn test_task_execution() {
             self.value += 1;
         }
         fn to_bytes(&self) -> Vec<u8> {
-            bincode::serialize(self).unwrap()
+            postcard::to_allocvec(self).unwrap()
         }
         fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task> {
-            Box::new(bincode::deserialize::<TestTask>(bytes).unwrap())
+            Box::new(postcard::from_bytes::<TestTask>(bytes).unwrap())
         }
     }
 
@@ -186,7 +186,6 @@ fn test_task_execution() {
 #[traced_test]
 #[test]
 fn test_task_serialization() {
-    use bincode;
     use enginelib::task::{StoredTask, Task};
     use serde::{Deserialize, Serialize};
 
@@ -213,10 +212,10 @@ fn test_task_serialization() {
             self.value += 1;
         }
         fn to_bytes(&self) -> Vec<u8> {
-            bincode::serialize(self).unwrap()
+            postcard::to_allocvec(self).unwrap()
         }
         fn from_bytes(&self, bytes: &[u8]) -> Box<dyn Task> {
-            Box::new(bincode::deserialize::<TestTask>(bytes).unwrap())
+            Box::new(postcard::from_bytes::<TestTask>(bytes).unwrap())
         }
     }
 
@@ -233,7 +232,7 @@ fn test_task_serialization() {
     };
 
     // Deserialize
-    let deserialized_task: TestTask = bincode::deserialize(&stored_task.bytes).unwrap();
+    let deserialized_task: TestTask = postcard::from_bytes(&stored_task.bytes).unwrap();
     assert_eq!(deserialized_task.value, 42);
 
     // Test the from_bytes function
@@ -241,6 +240,6 @@ fn test_task_serialization() {
     // We need a way to check the value inside the recreated task
     // Since we can't directly access the value, we'll serialize it again and deserialize manually
     let bytes = recreated_task.to_bytes();
-    let final_task: TestTask = bincode::deserialize(&bytes).unwrap();
+    let final_task: TestTask = postcard::from_bytes(&bytes).unwrap();
     assert_eq!(final_task.value, 42);
 }

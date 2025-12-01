@@ -3,11 +3,27 @@ use std::{fs, io::Error, u32};
 use serde::{Deserialize, Serialize};
 use tracing::{error, instrument};
 
+fn default_host() -> String {
+    "[::1]:50051".into()
+}
+
+fn default_clean_tasks() -> u64 {
+    60
+}
+
+fn default_pagination_limit() -> u32 {
+    u32::MAX
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConfigTomlServer {
+    #[serde(default)]
     pub cgrpc_token: Option<String>, // Administrator Token, used to invoke cgrpc reqs. If not preset will default to no protection.
+    #[serde(default = "default_host")]
     pub host: String,
+    #[serde(default = "default_clean_tasks")]
     pub clean_tasks: u64,
+    #[serde(default = "default_pagination_limit")]
     pub pagination_limit: u32,
 }
 impl Default for ConfigTomlServer {
