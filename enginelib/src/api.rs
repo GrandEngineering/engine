@@ -15,6 +15,7 @@ use crate::{
     plugin::LibraryManager,
     task::{ExecutingTaskQueue, SolvedTasks, StoredTask, Task, TaskQueue},
 };
+pub use postcard;
 pub use postcard::from_bytes;
 pub use postcard::to_allocvec;
 use std::{collections::HashMap, sync::Arc, time::Duration};

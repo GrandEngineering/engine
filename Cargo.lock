@@ -618,7 +618,6 @@ dependencies = [
  "colored",
  "druid",
  "enginelib",
- "postcard",
  "prost",
  "serde",
  "tokio",

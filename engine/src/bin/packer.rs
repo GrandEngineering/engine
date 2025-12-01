@@ -5,6 +5,7 @@ use colored::*;
 use enginelib::events::ID;
 // For coloring the output
 use enginelib::Registry;
+use enginelib::api::postcard;
 use enginelib::prelude::error;
 use enginelib::task::{StoredTask, Task, TaskQueue};
 use enginelib::{api::EngineAPI, event::info};
